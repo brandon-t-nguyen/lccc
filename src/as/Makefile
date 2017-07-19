@@ -3,14 +3,13 @@ MODULE = as
 
 SRCMAIN = $(SRCDIR)/$(MODULE).c
 SOURCES += $(shell find $(SRCDIR) -name '*.c' ! -wholename $(SRCMAIN))
-SOURCES += $(shell find $(SRCDIR) -name '*.cpp' ! -wholename $(SRCMAIN))
-BIN = lccc-as
+BIN = lccc-$(MODULE)
 
-OBJECTS  = $(SOURCES:$(SRCDIR)/%.c*=$(OBJDIR)/$(MODULE)/%.o)
-OBJMAIN  = $(SRCMAIN:$(SRCDIR)/%.c*=$(OBJDIR)/$(MODULE)/%.o)
+OBJECTS  = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/$(MODULE)/%.o)
+OBJMAIN  = $(SRCMAIN:$(SRCDIR)/%.c=$(OBJDIR)/$(MODULE)/%.o)
 
 GTEST_DIR = test
-GTEST_BIN = test_lccc-as
+GTEST_BIN = test-$(MODULE)
 GTEST_SRC = $(GTEST_DIR)/*.cpp
 
 $(OBJDIR)/$(MODULE)/%.o:$(SRCDIR)/%.cpp
@@ -23,12 +22,12 @@ $(OBJDIR)/$(MODULE)/%.o:$(SRCDIR)/%.c
 
 $(BINDIR)/$(BIN): $(OBJECTS) $(OBJMAIN)
 	mkdir -p $(BINDIR)
-	$(CC) $(CFLAGS) $(INCLUDE) $(LIBS) -o $(BINDIR)/$(BIN) $(OBJECTS) $(OBJMAIN)
+	$(CC) $(CFLAGS) $(INCLUDE) -o $(BINDIR)/$(BIN) $(OBJECTS) $(OBJMAIN) $(LIBS)
 	@echo "Program built"
 
 $(BINDIR)/$(GTEST_BIN): $(OBJECTS)
 	mkdir -p $(BINDIR)
-	$(CC) $(CFLAGS) $(INCLUDE) $(LIBS) -lgtest -o $(BINDIR)/$(GTEST_BIN) $(OBJECTS) $(GTEST_SRC)
+	$(CC) $(CFLAGS) $(INCLUDE) -o $(BINDIR)/$(GTEST_BIN) $(OBJECTS) $(GTEST_SRC) $(LIBS) -lgtest 
 	@echo "gtest suite built"
 
 all: $(BINDIR)/$(BIN)
