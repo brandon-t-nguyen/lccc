@@ -13,7 +13,21 @@ These are the traditional 1 to 1 assembly-machinecode mapped mnemonics for the o
 ## Extended LCCC mnemonics
 These are additional helpful mnemonics that provide higher level functionality that the LC-3 ISA doesn't support.
 
-## Assembler Directives ("Pseudo-ops")
-| Directive | Purpose | Example usage | Example explanation |
-|:----------|:--------|:--------------|:--------------------|
-| `.define <searched text> <replacement text>` | Simple text repleacement macro a la C | `.define SIZE 16`<br>`ldr r3,r1,#SIZE` | Instances of `HEAPSIZE` will be replaced with `16' after the `.define` |
+| Mnemonic    |
+|:------------|
+| `MOV`       |
+| `NEG`       |
+| `PUSH`/`POP`|
+
+## Assembler Directives
+| Directive |
+|:----------|
+| `.define` |
+
+#### `.define`
+Simple text repleacement macro a la C
+##### Syntax
+`.define <searched text> <replacement text>`
+##### Example
+`.define SIZE 16`<br>`ldr r3,r1,#SIZE`
+Instances of `HEAPSIZE` will be replaced with `16` after the `.define`
