@@ -16,4 +16,11 @@ all:
 	# +$(MAKE) -C $(BASE)/ld
 	# +$(MAKE) -C $(BASE)/cc
 
+clean:
+	rm -rf cscope
+
+cscope:
+	mkdir -p cscope
+	tools/cscope_gen.sh -d $(PROOT)/inc -d $(PROOT)/src -o $(PROOT)/cscope -b q
+
 .PHONY: all clean test gtest mem debug
