@@ -12,9 +12,9 @@ struct tokenizer_str
 };
 
 
-void Tokenizer_ctor( Tokenizer *this, const char *str, const char *del)
+void Tokenizer_ctor( Tokenizer *thiz, const char *str, const char *del)
 {
-    if( this == NULL )
+    if( thiz == NULL )
         return;
     VVector* vec = VVector_new(1);
     char *buffer = strdup(str);     // have a working buffer
@@ -25,20 +25,20 @@ void Tokenizer_ctor( Tokenizer *this, const char *str, const char *del)
         tok = strtok(NULL,del);          //next token
     }
 
-    this->pos = 0;
-    this->length = VVector_length(vec);                 //get the size of the array returned
-    this->elements = (char**)VVector_toArray_cpy(vec);  //get the array of strings
+    thiz->pos = 0;
+    thiz->length = VVector_length(vec);                 //get the size of the array returned
+    thiz->elements = (char**)VVector_toArray_cpy(vec);  //get the array of strings
     VVector_delete(vec);    //free the vector
     free(buffer);
 }
 
-void Tokenizer_dtor( Tokenizer *this )
+void Tokenizer_dtor( Tokenizer *thiz )
 {
-    if( this == NULL )
+    if( thiz == NULL )
         return;
     //Free each string
-    int size = this->length;
-    char **strs = this->elements;
+    int size = thiz->length;
+    char **strs = thiz->elements;
     for(int i = 0; i < size; i++)
     {
         free(strs[i]);
@@ -57,36 +57,36 @@ Tokenizer* Tokenizer_new(const char *str, const char *del)
     return tokenizer;
 }
 
-void Tokenizer_delete(Tokenizer *this)
+void Tokenizer_delete(Tokenizer *thiz)
 {
-    if( this == NULL )
+    if( thiz == NULL )
         return;
-    Tokenizer_dtor( this );
+    Tokenizer_dtor( thiz );
     //Free the struct
-    free(this);
+    free(thiz);
 }
 
 // Get the next string in the tokenizer
 // Returns null if no more tokens
 // Returns pointer to newly allocated string otherwise
-const char* Tokenizer_next(Tokenizer* this)
+const char* Tokenizer_next(Tokenizer* thiz)
 {
-    if( this == NULL )
+    if( thiz == NULL )
         return NULL;
-    if(this->pos >= this->length)
+    if(thiz->pos >= thiz->length)
     {
         return NULL;
     }
-    char* output = this->elements[this->pos];
-    this->pos++;
+    char* output = thiz->elements[thiz->pos];
+    thiz->pos++;
     return output;
 }
 
-char* Tokenizer_next_cpy(Tokenizer* this)
+char* Tokenizer_next_cpy(Tokenizer* thiz)
 {
-    if( this == NULL )
+    if( thiz == NULL )
         return NULL;
-    char *next = Tokenizer_next(this);
+    char *next = Tokenizer_next(thiz);
     return (next==NULL)? NULL : strdup(next);
 }
 
@@ -102,16 +102,16 @@ const char* Tokenizer_peek(Tokenizer* tokenizer)
     return output;
 }
 
-char* Tokenizer_peek_cpy(Tokenizer* this)
+char* Tokenizer_peek_cpy(Tokenizer* thiz)
 {
-    char *peek = Tokenizer_peek(this);
+    char *peek = Tokenizer_peek(thiz);
     return (peek==NULL)? NULL : strdup(peek);
 }
 
 // Checks if there are tokens remaining
-int Tokenizer_hasTokens(Tokenizer* this)
+int Tokenizer_hasTokens(Tokenizer* thiz)
 {
-    if(this->pos < this->length)
+    if(thiz->pos < thiz->length)
     {
         return 1;
     }
@@ -119,31 +119,31 @@ int Tokenizer_hasTokens(Tokenizer* this)
 }
 
 // Returns number of remaining tokens
-int Tokenizer_countTokens(Tokenizer* this)
+int Tokenizer_countTokens(Tokenizer* thiz)
 {
-    return this->length - this->pos;
+    return thiz->length - thiz->pos;
 }
 
 // Returns total number of tokens
-int Tokenizer_numTokens(Tokenizer* this)
+int Tokenizer_numTokens(Tokenizer* thiz)
 {
-    return this->length;
+    return thiz->length;
 }
 
 // Resets the tokenizer to beginning
-void Tokenizer_reset(Tokenizer* this)
+void Tokenizer_reset(Tokenizer* thiz)
 {
-    this->pos = 0;
+    thiz->pos = 0;
 }
 
-// Checks if the this contains a certain string
+// Checks if the thiz contains a certain string
 // Returns 1 if true, 0 if false
-int Tokenizer_contains(Tokenizer* this, const char* str)
+int Tokenizer_contains(Tokenizer* thiz, const char* str)
 {
-    int len = this->length;
+    int len = thiz->length;
     for(int i = 0; i < len; i++)
     {
-        if(strcmp(str,this->elements[i]) == 0)
+        if(strcmp(str,thiz->elements[i]) == 0)
         {
             return 1;
         }
@@ -151,38 +151,38 @@ int Tokenizer_contains(Tokenizer* this, const char* str)
     return 0;
 }
 
-const char * const * Tokenizer_tokens(Tokenizer *this)
+const char * const * Tokenizer_tokens(Tokenizer *thiz)
 {
-    return this->elements;
+    return thiz->elements;
 }
 
 // Returns a deep copy of all the tokens in an array
-char** Tokenizer_tokens_cpy(Tokenizer* this)
+char** Tokenizer_tokens_cpy(Tokenizer* thiz)
 {
-    char** output = malloc(sizeof(char*) * this->length);
-    int len = this->length;
+    char** output = malloc(sizeof(char*) * thiz->length);
+    int len = thiz->length;
     for(int i = 0; i < len; i++)
     {
-        output[i] = strdup(this->elements[i]);
+        output[i] = strdup(thiz->elements[i]);
     }
     return output;
 }
 
 // Returns a deep copy of all the tokens in an array
-void Tokenizer_populateArray(Tokenizer* this, char *array[])
+void Tokenizer_populateArray(Tokenizer* thiz, char *array[])
 {
-    int len = this->length;
+    int len = thiz->length;
     for(int i = 0; i < len; i++)
     {
-        array[i] = strdup(this->elements[i]);
+        array[i] = strdup(thiz->elements[i]);
     }
 }
 
-void Tokenizer_print(Tokenizer *this)
+void Tokenizer_print(Tokenizer *thiz)
 {
-    int len = this->length;
+    int len = thiz->length;
     for(int i = 0; i < len; i++)
     {
-        printf("Token #%d: %s\n", i, this->elements[i]);
+        printf("Token #%d: %s\n", i, thiz->elements[i]);
     }
 }
