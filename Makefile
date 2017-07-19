@@ -1,12 +1,13 @@
 PROOT = $(shell pwd)
+export BINDIR = $(PROOT)/bin
+export OBJDIR = $(PROOT)/obj
+export LIBDIR = $(PROOT)/lib
+
 export CC = gcc
 export LD = ld
 export CFLAGS =-Wall -Wextra -g
 export INCLUDE = -I$(PROOT)/inc
-
-export BINDIR = $(PROOT)/bin
-export OBJDIR = $(PROOT)/obj
-export LIBDIR = $(PROOT)/lib
+export LIBS   = -L$(LIBDIR) -lbrandon
 
 BASE = src
 
