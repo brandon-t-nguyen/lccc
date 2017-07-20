@@ -27,7 +27,7 @@ const void * const * VVector_toArray(VVector* vector);        //Returns an array
 void** VVector_toArray_cpy(VVector* vector);    //Returns an array with the values, shallow copied;
 
 int VVector_length(VVector* vector);    //reports length of the vector
-int VVector_length(VVector* vector);    //reports size of the vector
+int VVector_capacity(VVector* vector);  //reports total capacity of the vector
 
 #endif  //__VVECTOR_H__
 

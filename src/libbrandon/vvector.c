@@ -10,8 +10,15 @@ struct vvector_str
     void (*del)(void *);    // function to call deletors
 };
 
+#define MIN_SIZE 8
+
 VVector* VVector_new(int length)
 {
+    if (length < MIN_SIZE)
+    {
+        length = MIN_SIZE;
+    }
+
     VVector* vec = malloc(sizeof(VVector));         // Allocate vvector
     vec->length = 0;
     vec->size = length;
@@ -31,41 +38,41 @@ VVector* VVector_new_reg(int length, void (*func)(void *))
     return vec;
 }
 
-void VVector_registerDelete( VVector *this, void (*func)(void *))
+void VVector_registerDelete( VVector *thiz, void (*func)(void *))
 {
-    this->del = func;
+    thiz->del = func;
 }
 
-void VVector_delete(VVector* this)
+void VVector_delete(VVector* thiz)
 {
-    VVector_deleteLite(this);
+    VVector_deleteLite(thiz);
 }
 
-void VVector_deleteLite(VVector* this)
+void VVector_deleteLite(VVector* thiz)
 {
-    free(this->array);   //free the array
-    free(this);          //free the pointer
+    free(thiz->array);   //free the array
+    free(thiz);          //free the pointer
 }
 
-void VVector_deleteFull(VVector* this)
+void VVector_deleteFull(VVector* thiz)
 {
-    int length = this->length;
+    int length = thiz->length;
     for(int i = 0; i < length; i++)
     {
-        if(this->array[i] != 0)
-            this->del(this->array[i]);
+        if(thiz->array[i] != 0)
+            thiz->del(thiz->array[i]);
     }
-    VVector_deleteLite(this);
+    VVector_deleteLite(thiz);
 }
 
 //Will double size
-void VVector_realloc(VVector* this, int size)
+void VVector_realloc(VVector* thiz, int size)
 {
     //Break if we're making it even smaller
-    if(size <= this->length)
+    if(size <= thiz->length)
         return;
-    void** oldArr = this->array;
-    int oldSize = this->size;
+    void** oldArr = thiz->array;
+    int oldSize = thiz->size;
     int newSize = size;
 
     void** newArr = malloc(sizeof(void*) * newSize);   // alloc new memory
@@ -79,42 +86,42 @@ void VVector_realloc(VVector* this, int size)
         newArr[i] = 0x0;    //null init
     }
 
-    this->array = newArr;    //Set the new array
-    this->size = newSize;    //Set new size
+    thiz->array = newArr;    //Set the new array
+    thiz->size = newSize;    //Set new size
     free(oldArr); //Free the old array
 }
 
-void VVector_push(VVector* this, void* ptr)
+void VVector_push(VVector* thiz, void* ptr)
 {
-    if(this->length == this->size)
+    if(thiz->length == thiz->size)
     {
-        VVector_realloc(this,this->size*2);    //amortize doubling
+        VVector_realloc(thiz,thiz->size*2);    //amortize doubling
     }
-    this->array[this->length] = ptr;  //set the value
-    this->length++;                  //increment the length
+    thiz->array[thiz->length] = ptr;  //set the value
+    thiz->length++;                  //increment the length
 }
 
-void* VVector_pop(VVector* this)
+void* VVector_pop(VVector* thiz)
 {
-    if(this->length > 0)
+    if(thiz->length > 0)
     {
-        this->length -= 1;
-        return this->array[this->length]; //get the last value; lol already decremented for this
+        thiz->length -= 1;
+        return thiz->array[thiz->length]; //get the last value; lol already decremented for thiz
     }
     return 0x0;
 }
 
-void* VVector_get(VVector* this, int index)
+void* VVector_get(VVector* thiz, int index)
 {
-    if(index < this->length)
-        return this->array[index];
+    if(index < thiz->length)
+        return thiz->array[index];
     return 0x0;
 }
 
-int VVector_find(VVector* this, void * thing)
+int VVector_find(VVector* thiz, void * thing)
 {
-    int length = this->length;
-    void **arr = this->array;
+    int length = thiz->length;
+    void **arr = thiz->array;
     for( int i = 0; i < length; i++ )
     {
         if(thing == arr[i])
@@ -125,13 +132,13 @@ int VVector_find(VVector* this, void * thing)
     return -1;
 }
 
-void VVector_removeAt(VVector* this, int index )
+void VVector_removeAt(VVector* thiz, int index )
 {
-    int length = this->length;
+    int length = thiz->length;
     if( index < 0 || length <= index || length < 1 )
         return;
 
-    void **arr = this->array;
+    void **arr = thiz->array;
     for( int i = index; i < length-1; i++ )
     {
         arr[i] = arr[i+1];
@@ -139,22 +146,22 @@ void VVector_removeAt(VVector* this, int index )
     arr[length-1] = NULL;
 }
 
-void VVector_remove(VVector* this, void * thing)
+void VVector_remove(VVector* thiz, void * thing)
 {
-    int loc = VVector_find(this, thing);
-    VVector_removeAt(this, loc);
+    int loc = VVector_find(thiz, thing);
+    VVector_removeAt(thiz, loc);
 }
 
-const void * const * VVector_toArray(VVector* this)
+const void * const * VVector_toArray(VVector* thiz)
 {
-    return this->array;
+    return thiz->array;
 }
 
-void** VVector_toArray_cpy(VVector* this)
+void** VVector_toArray_cpy(VVector* thiz)
 {
-    int length = this->length;
+    int length = thiz->length;
     void** output = malloc(sizeof(void*) * length);
-    void** array = this->array;
+    void** array = thiz->array;
     for(int i = 0; i < length; i++)
     {
         output[i] = array[i];
@@ -163,11 +170,12 @@ void** VVector_toArray_cpy(VVector* this)
 }
 
 
-int VVector_length(VVector* this)
+int VVector_length(VVector* thiz)
 {
-    return this->length;
+    return thiz->length;
 }
-int VVector_size(VVector* this)
+
+int VVector_capacity(VVector* thiz)
 {
-    return this->size;
+    return thiz->size;
 }
