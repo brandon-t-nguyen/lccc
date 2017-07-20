@@ -27,7 +27,7 @@ VVector* VVector_new(int length)
     {
         vec->array[i] = 0x0;    // Null init
     }
-    vec->del = free;
+    vec->del = NULL;
     return vec;
 }
 
@@ -45,7 +45,16 @@ void VVector_registerDelete( VVector *thiz, void (*func)(void *))
 
 void VVector_delete(VVector* thiz)
 {
-    VVector_deleteLite(thiz);
+    // select which deletor based on
+    // if a deletor was specified
+    if (thiz->del == NULL)
+    {
+        VVector_deleteLite(thiz);
+    }
+    else
+    {
+        VVector_deleteFull(thiz);
+    }
 }
 
 void VVector_deleteLite(VVector* thiz)

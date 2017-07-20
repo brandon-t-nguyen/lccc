@@ -7,9 +7,9 @@ struct vvector_str;
 typedef struct vvector_str VVector;
 
 VVector* VVector_new(int length);            // null initializes a vector of length
-VVector* VVector_new_reg(int length, void (*func)(void *));   // null initializes a vector of length, registers a delete func
+VVector* VVector_new_reg(int length, void (*func)(void *));   // null initializes a vector of length, registers an element delete func
 void VVector_registerDelete(VVector *this, void (*func)(void *)); // register a delete function
-void VVector_delete(VVector* vector);        // uses lite
+void VVector_delete(VVector* vector);        // will use lite if element delete funcnot registered
 void VVector_deleteLite(VVector* vector);    // free vector structure but not internal contents
 void VVector_deleteFull(VVector* vector);    // free vector and all internal contents
 
