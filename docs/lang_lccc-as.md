@@ -215,9 +215,10 @@ Imports a label/symbol that is visible from other object code.
 ```
 .import somefunc
 main
-    ld r3,somefunc
+    ld r3,somefunc_addr
     jsrr r3
     ret
+somefunc_addr
     .fill somefunc
 ```
 ---
