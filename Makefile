@@ -24,4 +24,10 @@ cscope:
 	mkdir -p cscope
 	tools/cscope_gen.sh -d $(PROOT)/inc -d $(PROOT)/src -o $(PROOT)/cscope -b q
 
-.PHONY: all clean test gtest mem debug
+test-as:
+	$(PROOT)/bin/lccc-as
+
+mem-as:
+	valgrind --leak-check=full $(PROOT)/bin/lccc-as
+
+.PHONY: all clean test gtest mem debug cscope

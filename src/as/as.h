@@ -13,10 +13,6 @@ typedef enum AsmSyntax_enum
     AsmSyntax_lccc
 } AsmSyntax;
 
-typedef enum Mnemonic_enum
-{
-} Mnemonic_enum;
-
 typedef struct Program_str
 {
     VVector * localSymbols;     // symbols declared in this unit
@@ -30,8 +26,8 @@ typedef struct Symbol_str
 
 typedef struct Line_str
 {
-    char * code;    // the actual line of code
-
+    int number;
+    const char * code;    // filtered code
 } Line;
 
 typedef enum ParseError_enum
