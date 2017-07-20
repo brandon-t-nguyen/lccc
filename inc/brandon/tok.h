@@ -5,24 +5,11 @@
 extern "C"{
 #endif
 
+#include <brandon/vvector.h>
+
 //Provides a tokenizer struct
 struct tokenizer_str;
 typedef struct tokenizer_str Tokenizer;
-
-
-/**
- * Tokenizer_ctor
- * Allocates and initializes a tokenizer
- * @param str String to tokenize
- * @param delimiters String of delimiters to delimit with
- */
-void Tokenizer_ctor( Tokenizer *thiz, const char *str, const char *delimiters );
-
-/**
- * Tokenizer_dtor
- * Deconstructs the tokenizer
- */
-void Tokenizer_dtor( Tokenizer *thiz );
 
 /**
  * Tokenizer_new
@@ -32,6 +19,19 @@ void Tokenizer_dtor( Tokenizer *thiz );
  * @return New Tokenizer
  */
 Tokenizer * Tokenizer_new(const char *str, const char *delimiters);
+
+/**
+ * Tokenizer_new_custom
+ * Allocates and initializes a tokenizer, using a custom tokenizing function
+ * @param str String to tokenize
+ * @param func Function that will tokenize the string, returning tokens in a
+ *             VVector. The returned VVector can be deleted using its function
+ * @param param Parameter for the provided function if it needs it
+ * @return New Tokenizer
+ */
+Tokenizer * Tokenizer_new_custom(const char *str,
+                                 VVector * (* func)(const char *, void *),
+                                 void * param);
 
 /**
  * Tokenizer_delete

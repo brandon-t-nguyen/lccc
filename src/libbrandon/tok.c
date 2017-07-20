@@ -11,11 +11,25 @@ struct tokenizer_str
     char **elements;    //Array of strings
 };
 
-
-void Tokenizer_ctor( Tokenizer *thiz, const char *str, const char *del)
+static void Tokenizer_ctor_custom( Tokenizer *thiz,
+                                   const char *str,
+                                   VVector * (* func)(const char *, void *),
+                                   void * param)
 {
-    if( thiz == NULL )
+    if (thiz == NULL)
         return;
+
+    VVector * vec = func( str, param );
+
+    thiz->pos = 0;
+    thiz->length = VVector_length(vec);                 //get the size of the array returned
+    thiz->elements = (char**)VVector_toArray_cpy(vec);  //get the array of strings
+    VVector_delete(vec);    //free the vector
+}
+
+static VVector * strtok_wrapper( const char * str, void * param )
+{
+    const char * del = (const char *) param;
     VVector* vec = VVector_new(1);
     char *buffer = strdup(str);     // have a working buffer
     char* tok = strtok(buffer,del);
@@ -24,15 +38,27 @@ void Tokenizer_ctor( Tokenizer *thiz, const char *str, const char *del)
         VVector_push(vec,strdup(tok));  //Push the string into the vector
         tok = strtok(NULL,del);          //next token
     }
-
-    thiz->pos = 0;
-    thiz->length = VVector_length(vec);                 //get the size of the array returned
-    thiz->elements = (char**)VVector_toArray_cpy(vec);  //get the array of strings
-    VVector_delete(vec);    //free the vector
-    free(buffer);
+    return vec;
 }
 
-void Tokenizer_dtor( Tokenizer *thiz )
+/**
+ * Tokenizer_ctor
+ * Allocates and initializes a tokenizer
+ * @param str String to tokenize
+ * @param delimiters String of delimiters to delimit with
+ */
+static void Tokenizer_ctor( Tokenizer *thiz, const char *str, const char *del)
+{
+    // uses strtok as a base: TODO: implement own strtok
+    // that uses a context so it's re-entrant
+    Tokenizer_ctor_custom( thiz, str, strtok_wrapper, del );
+}
+
+/**
+ * Tokenizer_dtor
+ * Deconstructs the tokenizer
+ */
+static void Tokenizer_dtor( Tokenizer *thiz )
 {
     if( thiz == NULL )
         return;
@@ -53,6 +79,17 @@ Tokenizer* Tokenizer_new(const char *str, const char *del)
     Tokenizer *tokenizer = malloc(sizeof(Tokenizer));
 
     Tokenizer_ctor( tokenizer, str, del );
+
+    return tokenizer;
+}
+
+Tokenizer * Tokenizer_new_custom(const char *str,
+                                 VVector * (* func)(const char *, void *),
+                                 void * param)
+{
+    Tokenizer *tokenizer = malloc(sizeof(Tokenizer));
+
+    Tokenizer_ctor_custom( tokenizer, str, func, param );
 
     return tokenizer;
 }
