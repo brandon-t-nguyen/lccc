@@ -9,6 +9,8 @@ export CFLAGS =-Wall -Wextra -g
 export INCLUDE = -I$(PROOT)/inc
 export LIBS   = -L$(LIBDIR) -lbrandon
 
+export CFLAGS +=-DDEBUG
+
 BASE = src
 
 all:
@@ -19,6 +21,9 @@ all:
 
 clean:
 	rm -rf cscope
+	rm -rf $(BINDIR)
+	rm -rf $(OBJDIR)
+	rm -rf $(LIBDIR)
 
 cscope:
 	mkdir -p cscope
