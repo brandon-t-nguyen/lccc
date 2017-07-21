@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <brandon/log.h>
 #include <brandon/tok.h>
 #include <brandon/vvector.h>
 
@@ -42,7 +43,8 @@ VVector * processSource( const char * src )
         // scan for non-whitespace; end at comment
         int pos = 0;
         char c;
-        int hasContent = 0;
+        int posContent = -1;
+        int endContent = -1;
         for (pos = 0; pos < len; ++pos)
         {
             char c = line[pos];
@@ -52,18 +54,24 @@ VVector * processSource( const char * src )
             }
 
             // if a non-space or non-tab is found, content is found
-            if ( !hasContent && c != ' ' && c != '\t')
+            if (posContent < 0 && c != ' ' && c != '\t')
             {
-                hasContent = 1;
+                posContent = pos;
+                endContent = pos;
+            }
+            else if (c != ' ' && c != '\t')
+            {
+                endContent = pos;
             }
         }
 
+        dprintf("Line %d: %s, [%d,%d]\n", i, line, posContent, endContent);
         // if there is meaningful content, copy it
-        if (hasContent)
+        if (posContent >= 0)
         {
-            int contentLen = pos;
+            int contentLen = endContent - posContent + 1;
             buffer =  (char *) realloc( buffer, contentLen+1 );
-            strncpy( buffer, line, contentLen );
+            strncpy( buffer, line+posContent, contentLen );
             buffer[contentLen] = '\0'; // add the null term
 
             // add to our lines
