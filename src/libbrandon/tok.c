@@ -22,15 +22,23 @@ static void Tokenizer_ctor_custom( Tokenizer *thiz,
     VVector * vec = func( str, param );
 
     thiz->pos = 0;
-    thiz->length = VVector_length(vec);                 //get the size of the array returned
-    thiz->elements = (char**)VVector_toArray_cpy(vec);  //get the array of strings
+
+    //get the size of the array
+    thiz->length = VVector_length(vec);
+
+    //get the array of strings
+    thiz->elements = (char **)malloc(sizeof(char *)*thiz->length);
+    for (int i = 0; i < thiz->length; ++i)
+    {
+        thiz->elements[i] = strdup(VVector_get(vec,i));
+    }
     VVector_delete(vec);    //free the vector
 }
 
 static VVector * strtok_wrapper( const char * str, void * param )
 {
     const char * del = (const char *) param;
-    VVector* vec = VVector_new(1);
+    VVector* vec = VVector_new_reg(1,free);
     char *buffer = strdup(str);     // have a working buffer
     char* tok = strtok(buffer,del);
     while(tok != NULL)
@@ -38,6 +46,7 @@ static VVector * strtok_wrapper( const char * str, void * param )
         VVector_push(vec,strdup(tok));  //Push the string into the vector
         tok = strtok(NULL,del);          //next token
     }
+    free( buffer );
     return vec;
 }
 
