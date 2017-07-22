@@ -2,7 +2,7 @@
 #define __VVECTOR_H__
 
 //VVector: void vector
-
+#define VVector(type) VVector
 struct vvector_str;
 typedef struct vvector_str VVector;
 
