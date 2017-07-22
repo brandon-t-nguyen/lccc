@@ -24,13 +24,14 @@ Tokenizer * Tokenizer_new(const char *str, const char *delimiters);
  * Tokenizer_new_custom
  * Allocates and initializes a tokenizer, using a custom tokenizing function
  * @param str String to tokenize
- * @param func Function that will tokenize the string, returning tokens in a
- *             VVector. The returned VVector can be deleted using its function
+ * @param func Function that will tokenize the string. Function takes the
+ *             the source string, a pointer to where to report the number
+ *             of tokens, and a handle to an array of cstrings
  * @param param Parameter for the provided function if it needs it
  * @return New Tokenizer
  */
 Tokenizer * Tokenizer_new_custom(const char *str,
-                                 VVector * (* func)(const char *, void *),
+                                 void (* func)(const char *, int * , char ***, void *),
                                  void * param);
 
 /**

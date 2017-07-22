@@ -13,40 +13,34 @@ struct tokenizer_str
 
 static void Tokenizer_ctor_custom( Tokenizer *thiz,
                                    const char *str,
-                                   VVector * (* func)(const char *, void *),
+                                   void (* func)(const char *, int * , char ***, void *),
                                    void * param)
 {
     if (thiz == NULL)
         return;
 
-    VVector * vec = func( str, param );
-
+    func( str, &(thiz->length), &(thiz->elements), param );
     thiz->pos = 0;
-
-    //get the size of the array
-    thiz->length = VVector_length(vec);
-
-    //get the array of strings
-    thiz->elements = (char **)malloc(sizeof(char *)*thiz->length);
-    for (int i = 0; i < thiz->length; ++i)
-    {
-        thiz->elements[i] = strdup(VVector_get(vec,i));
-    }
-    VVector_delete(vec);    //free the vector
 }
 
-static VVector * strtok_wrapper( const char * str, void * param )
+static void strtok_wrapper( const char * str, int * pNum, char *** pArray, void * param )
 {
     const char * del = (const char *) param;
-    VVector* vec = VVector_new_reg(1,free);
-    char *buffer = strdup(str);     // have a working buffer
+    VVector* vec = VVector_new( 1 );  // getting an array from the vector;
+                                      // don't free them
+
+    char *buffer = strdup( str );     // have a working buffer
     char* tok = strtok(buffer,del);
     while(tok != NULL)
     {
         VVector_push(vec,strdup(tok));  //Push the string into the vector
-        tok = strtok(NULL,del);          //next token
+        tok = strtok( NULL, del );         //next token
     }
+    *pNum = VVector_length( vec );
+    *pArray = VVector_toArray_cpy( vec );
+
     free( buffer );
+    VVector_delete( vec );
     return vec;
 }
 
@@ -93,7 +87,7 @@ Tokenizer* Tokenizer_new(const char *str, const char *del)
 }
 
 Tokenizer * Tokenizer_new_custom(const char *str,
-                                 VVector * (* func)(const char *, void *),
+                                 void (* func)(const char *, int * , char ***, void *),
                                  void * param)
 {
     Tokenizer *tokenizer = malloc(sizeof(Tokenizer));
