@@ -101,6 +101,7 @@ char testProg[] = "; Brandon Nguyen\n"
                   "hello .stringz \"Hello world!\\n\";\n"
                   "main\n"
                   "    add r0, r0, r1;bullshit lmao\n"
+                  "    push {r1,r2,r3}\n"
                   ;
 
 int main( int argc, char * argv[] )

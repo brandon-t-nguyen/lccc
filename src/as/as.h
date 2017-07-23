@@ -21,35 +21,6 @@ typedef struct AsmSettings_str
     AsmSyntax syntax;
 } AsmSettings;
 
-
-
-typedef struct Source_str
-{
-    char * name;    // where this came from
-    char * raw;     // raw code
-
-    int numLines;   // number of lines
-    char ** lines;  // array of lines
-
-    Tokenizer * tok;    // tokenizer for the source
-} Source;
-void Source_ctor( Source * thiz, const char * src, const char * name );
-void Source_dtor( Source * thiz );
-
-typedef struct Program_str
-{
-    VVector(Symbol) * localSymbols;     // symbols declared in this unit
-    VVector(Symbol) * externalSymbols;  // symbols that are
-    VVector(Symbol) * exportSymbols;
-    VVector(Symbol) * code;
-} Program;
-
-typedef struct Symbol_str
-{
-    int external;
-    int32_t offset;
-} Symbol;
-
 typedef enum ParseError_enum
 {
     ParseError_Okay,
@@ -113,6 +84,41 @@ typedef struct AsmOpProp_str
     AsmOp op;           // resulting op
     AsmOpClass cls;     // class of operation
 } AsmOpProp;
+
+typedef struct Source_str
+{
+    char * name;    // where this came from
+    char * raw;     // raw code
+
+    int numLines;   // number of lines
+    char ** lines;  // array of lines
+
+    Tokenizer * tok;    // tokenizer for the source
+} Source;
+void Source_ctor( Source * thiz, const char * src, const char * name );
+void Source_dtor( Source * thiz );
+
+typedef struct Program_str
+{
+    VVector(Symbol) * localSymbols; // symbols declared in this unit
+    VVector(Symbol) * importSymbols;// symbols that are external
+    VVector(Symbol) * exportSymbols;// symbols to expose
+    VVector(Symbol) * code;
+} Program;
+
+// A symbol
+typedef struct Symbol_str
+{
+    int external;
+    int32_t offset;
+} Symbol;
+
+// For a translatable unit that becomes actual data/instructions
+typedef struct Code_str
+{
+    int32_t offset;
+
+} Code;
 
 #ifdef __cplusplus
 }
