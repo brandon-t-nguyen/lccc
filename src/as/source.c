@@ -38,7 +38,7 @@ void fullTokenize( const char * str, int * pNum, char *** pArray, void * param )
                 state = fts_comment;
             }
             // included delimiters
-            else if (c == '\n' || c == ',')
+            else if (c == '\n' || c == ',' || c == '{' || c == '}')
             {
                 VVector_push( vec, strchar(c) );
             }
@@ -62,7 +62,7 @@ void fullTokenize( const char * str, int * pNum, char *** pArray, void * param )
                 end = i-1;
                 VVector_push( vec, stricpy( str, pos, end ) );
             }
-            else if (c == '\n' || c == ',')
+            else if (c == '\n' || c == ',' || c == '{' || c == '}')
             {
                 state = fts_find;
                 end = i-1;
@@ -110,6 +110,8 @@ void Source_ctor( Source * thiz, const char * src, const char * name )
     thiz->lines = Tokenizer_tokens_cpy(tok);
 
     thiz->tok = Tokenizer_new_custom( src, fullTokenize, NULL );
+
+    Tokenizer_delete( tok );
 }
 
 void Source_dtor( Source * thiz )
@@ -121,4 +123,6 @@ void Source_dtor( Source * thiz )
         free(thiz->lines[i]);
     }
     free(thiz->lines);
+
+    Tokenizer_delete( thiz->tok );
 }
