@@ -24,11 +24,13 @@ IVmap * Vbst_IVmap_new( int (* comp)(void *, void *) )
     return ivmap;
 }
 
-IVmap * Vbst_IVmap_new_reg( int (* comp)(void *, void *), void (* del)(void *) )
+IVmap * Vbst_IVmap_new_reg( int (* comp)(void *, void *),
+                            void (* delKey)(void *),
+                            void (* delVal)(void *) )
 {
     IVmap * ivmap = (IVmap *)malloc( sizeof(IVmap) );
     ivmap->ops = &mapOps;
-    ivmap->base = Vbst_new_reg( comp, del );
+    ivmap->base = Vbst_new_reg( comp, delKey, delVal );
     return ivmap;
 }
 
@@ -51,7 +53,8 @@ struct Node_str
 struct vbst_str
 {
     int (* comp)(void *, void *);
-    void (* del)(void *);
+    void (* delKey)(void *);
+    void (* delVal)(void *);
     Node * root;
 };
 
@@ -69,16 +72,16 @@ Node * Node_new( void * key, void * val )
 }
 
 static
-void Node_delete( Node * thiz, void (* del)(void *) )
+void Node_delete( Node * thiz, Vbst * vbst )
 {
     if (thiz)
     {
-        if (del)
-        {
-            del( thiz->val );
-        }
-        Node_delete( thiz->l, del );
-        Node_delete( thiz->r, del );
+        if (vbst->delKey)
+            vbst->delKey( thiz->key );
+        if (vbst->delVal)
+            vbst->delVal( thiz->val );
+        Node_delete( thiz->l, vbst );
+        Node_delete( thiz->r, vbst );
         free( thiz );
     }
 }
@@ -87,14 +90,15 @@ static
 void  Vbst_ctor( Vbst * thiz, int (* comp)(void *, void *) )
 {
     thiz->comp = comp;
-    thiz->del = NULL;
+    thiz->delKey = NULL;
+    thiz->delVal = NULL;
     thiz->root = NULL;
 }
 
 static
 void Vbst_dtor( Vbst * thiz )
 {
-    Node_delete( thiz->root, thiz->del );
+    Node_delete( thiz->root, thiz );
 }
 
 /**
@@ -109,10 +113,12 @@ Vbst * Vbst_new( int (* comp)(void *, void *) )
     return vbst;
 }
 
-Vbst * Vbst_new_reg( int (* comp)(void *, void *), void (* del)(void *) )
+Vbst * Vbst_new_reg( int (* comp)(void *, void *),
+                     void (* delKey)(void *),
+                     void (* delVal)(void *) )
 {
     Vbst * vbst = Vbst_new( comp );
-    Vbst_registerDelete( vbst, del );
+    Vbst_registerDelete( vbst, delKey, delVal );
     return vbst;
 }
 
@@ -125,9 +131,12 @@ void Vbst_delete( Vbst * thiz )
 /**
  * Registers a deletor function
  */
-void Vbst_registerDelete( Vbst * thiz, void (* del)(void *) )
+void Vbst_registerDelete( Vbst * thiz,
+                          void (* delKey)(void *),
+                          void (* delVal)(void *) )
 {
-    thiz->del = del;
+    thiz->delKey = delKey;
+    thiz->delVal = delVal;
 }
 
 int Vbst_insert( Vbst * thiz, void * key, void * val )
