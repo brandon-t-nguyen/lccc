@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define IVmap(type) IVmap
+#define IVmap(key,value) IVmap
 
 typedef struct IVmap_ops_str
 {
