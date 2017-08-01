@@ -9,6 +9,7 @@ extern "C" {
 
 #include <brandon/vvector.h>
 #include <brandon/tok.h>
+#include <brandon/ivmap.h>
 
 typedef enum AsmSyntax_enum
 {
@@ -98,27 +99,29 @@ typedef struct Source_str
 void Source_ctor( Source * thiz, const char * src, const char * name );
 void Source_dtor( Source * thiz );
 
-typedef struct Program_str
-{
-    VVector(Symbol) * localSymbols; // symbols declared in this unit
-    VVector(Symbol) * importSymbols;// symbols that are external
-    VVector(Symbol) * exportSymbols;// symbols to expose
-    VVector(Symbol) * code;
-} Program;
-
-// A symbol
-typedef struct Symbol_str
-{
-    int external;
-    int32_t offset;
-} Symbol;
-
 // For a translatable unit that becomes actual data/instructions
 typedef struct Code_str
 {
     int32_t offset;
-
+    int8_t  length;
+    int     lineNum;
+    const AsmOpProp * opProp;
+    VVector(char) * tokens;
 } Code;
+
+typedef struct SectionProp_str
+{
+} SectionProp;
+
+typedef struct Section_str
+{
+    char * name;
+    int32_t offset;
+    int32_t size;
+    VVector(Symbol) * code;
+
+    SectionProp properties;
+} Section;
 
 #ifdef __cplusplus
 }

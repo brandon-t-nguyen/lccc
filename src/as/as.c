@@ -4,9 +4,12 @@
 
 #include <brandon/tok.h>
 #include <brandon/vvector.h>
+#include <brandon/vbst.h>
 #include <brandon/cstr.h>
 
 #include "as.h"
+#include "symbol.h"
+#include "program.h"
 
 
 #define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
@@ -55,44 +58,93 @@ const AsmOpProp lcccOps[] =
     {".import",AsmOp_import,AsmOpClass_Meta}
 };
 
-AsmOp parseOpcode( const char * str, AsmSettings * settings )
+const AsmOpProp InvalidOpProp = {"INVALID",AsmOp_invalid,AsmOpClass_Meta};
+
+const AsmOpProp * parseOpcode( const char * str, AsmSettings * settings )
 {
     for (int i = 0; i < ARRAY_LEN(pattOps); ++i)
     {
         if (!strcmp_caseless( pattOps[i].match, str ))
         {
-            return pattOps[i].op;
+            return &pattOps[i];
         }
     }
 
     if (settings->syntax == AsmSyntax_patt)
     {
-        return AsmOp_invalid;
+        return &InvalidOpProp;
     }
 
     for (int i = 0; i < ARRAY_LEN(lcccOps); ++i)
     {
         if (!strcmp_caseless( lcccOps[i].match, str ))
         {
-            return lcccOps[i].op;
+            return &lcccOps[i];
         }
     }
 
-    return AsmOp_invalid;
+    return &InvalidOpProp;
 }
 
-void processSource( Source * src, AsmSettings * set )
+typedef enum ProcessState_enum
 {
-    while (Tokenizer_hasTokens( src->tok ))
+    ProcessState_Init,
+    ProcessState_FindOperands,
+    ProcessState_EndOperands,
+    ProcessState_FoundSymbol
+} ProcessState;
+
+Code * Code_new( void )
+{
+    Code * thiz = (Code *)malloc( sizeof(Code) );
+    thiz->offset = -1;
+    thiz->length = -1;
+    thiz->opProp = NULL;
+    return thiz;
+}
+
+Program * processSource( Source * src, AsmSettings * set )
+{
+    Program * prog = Program_new();
+
+    const char * token = NULL;
+    ProcessState state = ProcessState_Init;
+    const char * symbolHold = NULL; // symbol to hold until concrete op found
+    AsmOpProp * prop = NULL;
+    int lineNum = 0;    // index 0
+    do
     {
-        const char * token = Tokenizer_next( src->tok );
+        // perform state logic
+        switch (state)
+        {
+        case ProcessState_Init:
+            break;
+        case ProcessState_FindOperands:
+            break;
+        case ProcessState_EndOperands:
+            break;
+        case ProcessState_FoundSymbol:
+            break;
+        }
+
+        // perform transitions
+        token = Tokenizer_next( src->tok );
+        if ( *token == '\n' )
+        {
+            ++lineNum;
+        }
+    } while (Tokenizer_hasTokens( src->tok ));
+
+    return prog;
+}
+        /*
         if (!strcmp(token,"\n"))
         {
             token = "\\n";
         }
         printf("Token: %s\n",token);
-    }
-}
+        */
+
 
 char testProg[] = "; Brandon Nguyen\n"
                   "; lorem ipsum\n"
@@ -107,12 +159,63 @@ char testProg[] = "; Brandon Nguyen\n"
 int main( int argc, char * argv[] )
 {
     // Driver: get a string containing the entire source
+    ///*
     Source src;
     Source_ctor( &src, testProg, "testProg" );
 
-    AsmSettings set = {.syntax = AsmSyntax_patt};
+    AsmSettings set = {.syntax = AsmSyntax_lccc};
 
-    processSource( &src, &set );
+    Program * prog = processSource( &src, &set );
+
+    Source_dtor( &src );
+    //*/
+
+    /*
+    IVmap * bst = Vbst_IVmap_new_reg( strcmp, free, free );
+
+    IVmap_insert( bst, strdup("bat"), strdup("man") );
+    IVmap_insert( bst, strdup("ant"), strdup("farm"));
+    IVmap_insert( bst, strdup("cat"), strdup("in the hat"));
+    IVmap_insert( bst, strdup("battle"), strdup("of helm's deep") );
+    IVmap_insert( bst, strdup("1337"), strdup("hax0rs") );
+
+    const char * str;
+    IVmap_find( bst, "bat", &str);
+    printf("%s: %s\n","bat",str);
+    IVmap_find( bst, "ant", &str);
+    printf("%s: %s\n","ant",str);
+    IVmap_find( bst, "cat", &str);
+    printf("%s: %s\n","cat",str);
+    IVmap_find( bst, "battle", &str);
+    printf("%s: %s\n","battle",str);
+    IVmap_find( bst, "1337", &str);
+    printf("%s: %s\n","1337",str);
+
+    IVmap_delete( bst );
+    */
+    /*
+    Vbst * bst = Vbst_new_reg( strcmp, free, free );
+
+    Vbst_insert( bst, strdup("bat"), strdup("man") );
+    Vbst_insert( bst, strdup("ant"), strdup("farm"));
+    Vbst_insert( bst, strdup("cat"), strdup("in the hat"));
+    Vbst_insert( bst, strdup("battle"), strdup("of helm's deep") );
+    Vbst_insert( bst, strdup("1337"), strdup("hax0rs") );
+
+    const char * str;
+    Vbst_find( bst, "bat", &str);
+    printf("%s: %s\n","bat",str);
+    Vbst_find( bst, "ant", &str);
+    printf("%s: %s\n","ant",str);
+    Vbst_find( bst, "cat", &str);
+    printf("%s: %s\n","cat",str);
+    Vbst_find( bst, "battle", &str);
+    printf("%s: %s\n","battle",str);
+    Vbst_find( bst, "1337", &str);
+    printf("%s: %s\n","1337",str);
+
+    Vbst_delete( bst );
+    */
 
     return 0;
 }
