@@ -27,9 +27,9 @@ char * strchar( char c )
 #define TO_LOWER(c) (c + ('a' - 'A'))
 int strcmp_caseless( const char * s1, const char * s2 )
 {
-    while (1)
+    char c1 = *s1; char c2 = *s2;
+    while (c1)
     {
-        char c1 = *s1; char c2 = *s2;
 
         // case matching
         if (IS_UPPER(c1))
@@ -42,6 +42,7 @@ int strcmp_caseless( const char * s1, const char * s2 )
             return comp;
 
         ++s1; ++s2;
+        c1 = *s1; c2 = *s2;
     }
-    return 0;
+    return c1-c2;
 }
