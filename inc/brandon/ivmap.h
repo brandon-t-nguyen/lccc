@@ -18,36 +18,36 @@ typedef struct IVmap_ops_str
 
 typedef struct IVmap_str
 {
-    void * base;        // base object
-    const IVmap_ops * ops;    // virtual table
+    void * base;            // base object
+    const IVmap_ops * ops;  // virtual table
 } IVmap;
 
 static inline
 int IVmap_insert( IVmap * ivmap, void * key, void * val )
 {
-    ivmap->ops->insert( ivmap->base, key, val );
+    return ivmap->ops->insert( ivmap->base, key, val );
 }
 
 static inline
 int IVmap_assign( IVmap * ivmap, void * key, void * val )
 {
-    ivmap->ops->assign( ivmap->base, key, val );
+    return ivmap->ops->assign( ivmap->base, key, val );
 }
 
 static inline
-void * IVmap_find( IVmap * ivmap, void * key, void ** pVal )
+int IVmap_find( IVmap * ivmap, void * key, void ** pVal )
 {
-    ivmap->ops->find( ivmap->base, key, pVal );
+    return ivmap->ops->find( ivmap->base, key, pVal );
 }
 
 static inline
-void * IVmap_remove( IVmap * ivmap, void * key, void ** pVal )
+int IVmap_remove( IVmap * ivmap, void * key, void ** pVal )
 {
-    ivmap->ops->remove( ivmap->base, key, pVal );
+    return ivmap->ops->remove( ivmap->base, key, pVal );
 }
 
 static inline
-void * IVmap_delete( IVmap * ivmap )
+void IVmap_delete( IVmap * ivmap )
 {
     ivmap->ops->delete( ivmap );
 }
