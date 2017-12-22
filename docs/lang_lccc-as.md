@@ -25,7 +25,7 @@ These are the traditional 1 to 1 assembly-machinecode mapped mnemonics for the o
 |`not`       |`jsr`    |`ldr`   |        |
 |            |`jsrr`   |`str`   |        |
 |            |`ret`    |`ldi`   |        |
-|            |         |`sti`   |        |
+|            |`nop`    |`sti`   |        |
 
 ---
 #### `add`
@@ -113,6 +113,7 @@ pop {r0, r1, r2, r3}
 ## Assembler Directives
 | Directives |
 |:-----------|
+| `.orig`    |
 | `.blkw`    |
 | `.fill`    |
 | `.stringz`/`.string`  |

@@ -20,7 +20,7 @@ all:
 	# +$(MAKE) -C $(BASE)/cc
 
 clean:
-	rm -rf cscope
+	#rm -rf cscope
 	rm -rf $(BINDIR)
 	rm -rf $(OBJDIR)
 	rm -rf $(LIBDIR)
