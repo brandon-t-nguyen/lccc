@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <brandon/tok.h>
-#include <brandon/vvector.h>
-#include <brandon/vbst.h>
-#include <brandon/cstr.h>
+#include <btn/str/tok.h>
+#include <btn/ds/vvector.h>
+#include <btn/ds/vbst.h>
+#include <btn/str/cstr.h>
 
 #include "as.h"
 #include "symbol.h"
@@ -94,14 +94,13 @@ typedef enum ProcessState_enum
     ProcessState_FoundSymbol
 } ProcessState;
 
-Code * Code_new( void )
+typedef struct ProcessContext_str
 {
-    Code * thiz = (Code *)malloc( sizeof(Code) );
-    thiz->offset = -1;
-    thiz->length = -1;
-    thiz->opProp = NULL;
-    return thiz;
-}
+    ProcessState state;
+    Source      * src;
+    AsmSettings * set;
+    Tokenizer   * tok;
+} ProcessContext;
 
 Program * processSource( Source * src, AsmSettings * set )
 {
@@ -112,40 +111,17 @@ Program * processSource( Source * src, AsmSettings * set )
     const char * symbolHold = NULL; // symbol to hold until concrete op found
     AsmOpProp * prop = NULL;
     int lineNum = 0;    // index 0
-    do
+    while (Tokenizer_hasTokens( src->tok ))
     {
-        // perform state logic
-        switch (state)
-        {
-        case ProcessState_Init:
-            break;
-        case ProcessState_FindOperands:
-            break;
-        case ProcessState_EndOperands:
-            break;
-        case ProcessState_FoundSymbol:
-            break;
-        }
-
-        // perform transitions
         token = Tokenizer_next( src->tok );
         if ( *token == '\n' )
         {
             ++lineNum;
         }
-    } while (Tokenizer_hasTokens( src->tok ));
+    }
 
     return prog;
 }
-        /*
-        if (!strcmp(token,"\n"))
-        {
-            token = "\\n";
-        }
-        printf("Token: %s\n",token);
-        */
-
-
 char testProg[] = "; Brandon Nguyen\n"
                   "; lorem ipsum\n"
                   "    .section .text\n"

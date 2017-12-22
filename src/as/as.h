@@ -7,9 +7,9 @@ extern "C" {
 
 #include <stdint.h>
 
-#include <brandon/vvector.h>
-#include <brandon/tok.h>
-#include <brandon/ivmap.h>
+#include <btn/ds/vvector.h>
+#include <btn/str/tok.h>
+#include <btn/ds/ivmap.h>
 
 typedef enum AsmSyntax_enum
 {

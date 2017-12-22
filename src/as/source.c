@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <brandon/log.h>
-#include <brandon/tok.h>
-#include <brandon/vvector.h>
-#include <brandon/cstr.h>
+#include <btn/util/log.h>
+#include <btn/str/tok.h>
+#include <btn/ds/vvector.h>
+#include <btn/str/cstr.h>
 
 #include "as.h"
 // Preprocessor for the assembler

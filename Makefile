@@ -7,17 +7,29 @@ export CC = gcc
 export LD = ld
 export CFLAGS =-Wall -Wextra -g
 export INCLUDE = -I$(PROOT)/inc
-export LIBS   = -L$(LIBDIR) -lbrandon
+export LIBS   = -L$(LIBDIR) -lbtn
+
+export LIB_DEPEND = $(LIBDIR)/libbtn.a
 
 export CFLAGS +=-DDEBUG
 
 BASE = src
 
-all:
-	+$(MAKE) -C $(BASE)/libbrandon
+libbtn.a:
+	mkdir -p $(LIBDIR)
+	+$(MAKE) -C external/libbtn
+	cp external/libbtn/lib/libbtn.a $(LIBDIR)/
+
+as:
 	+$(MAKE) -C $(BASE)/as
-	# +$(MAKE) -C $(BASE)/ld
-	# +$(MAKE) -C $(BASE)/cc
+
+ld:
+	+$(MAKE) -C $(BASE)/ld
+
+cc:
+	+$(MAKE) -C $(BASE)/cc
+
+all: $(LIB_DEPEND)
 
 clean:
 	#rm -rf cscope
@@ -35,4 +47,4 @@ test-as:
 mem-as:
 	valgrind --leak-check=full $(PROOT)/bin/lccc-as
 
-.PHONY: all clean test gtest mem debug cscope
+.PHONY: all as ld cc clean test gtest mem debug cscope

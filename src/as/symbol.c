@@ -2,9 +2,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <brandon/ivmap.h>
-#include <brandon/vbst.h>
-#include <brandon/vvector.h>
+#include <btn/ds/ivmap.h>
+#include <btn/ds/vbst.h>
+#include <btn/ds/vvector.h>
 
 #include "as.h"
 #include "symbol.h"
