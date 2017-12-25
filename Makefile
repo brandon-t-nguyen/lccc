@@ -15,18 +15,18 @@ export CFLAGS +=-DDEBUG
 
 BASE = src
 
-libbtn.a:
+$(LIBDIR)/libbtn.a:
 	mkdir -p $(LIBDIR)
 	+$(MAKE) -C external/libbtn
 	cp external/libbtn/lib/libbtn.a $(LIBDIR)/
 
-as:
+as: $(LIB_DEPEND)
 	+$(MAKE) -C $(BASE)/as
 
-ld:
+ld: $(LIB_DEPEND)
 	+$(MAKE) -C $(BASE)/ld
 
-cc:
+cc: $(LIB_DEPEND)
 	+$(MAKE) -C $(BASE)/cc
 
 all: $(LIB_DEPEND)
