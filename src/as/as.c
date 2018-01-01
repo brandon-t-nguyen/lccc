@@ -1,10 +1,13 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 
 #include <btn/vector.h>
+#include <btn/cstr.h>
 
 #include "as.h"
+#include "error.h"
 
 #define DEF_PATT
 //#define DEF_LCCC
@@ -52,7 +55,10 @@ void print_opt(const as_opt * opt)
             fputs(", ", stdout);
             opt_len += 2;
         } else if (opt->p_str) {
-            fputs(" ", stdout);
+            if (opt->assign)
+                fputs("=", stdout);
+            else
+                fputs(" ", stdout);
             opt_len += 1;
         }
     }
@@ -60,7 +66,10 @@ void print_opt(const as_opt * opt)
         fputs(opt->l_arg, stdout);
         opt_len += strlen(opt->l_arg);
         if (opt->p_str) {
-            fputs(" ", stdout);
+            if (opt->assign)
+                fputs("=", stdout);
+            else
+                fputs(" ", stdout);
             opt_len += 1;
         }
     }
@@ -115,13 +124,28 @@ void parse_opts(as_params * params, vector * files, int argc, char ** argv)
                 if (!opt->assign) {
                     if ((opt->s_arg && strcmp(opt->s_arg, arg) == 0) ||
                         (opt->l_arg && strcmp(opt->l_arg, arg) == 0)) {
-                        opt->func(params, &arg_i, argc, argv);
+                        int ret = opt->func(params, &arg_i, argc, argv);
+                        if (ret != 0)
+                            exit(ret);
                         is_opt = true;
                         break;
                     }
                 } else {
-                    // TODO: logic for assignment
-                    if (false) {
+                    // check for equal sign
+                    size_t equal_idx = strcfind(arg, '=', 0);
+                    if (equal_idx != SIZE_MAX) {
+                        // check if arg is right length and passes strcmp
+                        if ((opt->s_arg != NULL &&
+                             strlen(opt->s_arg) == equal_idx &&
+                             strncmp(opt->s_arg, arg, equal_idx) == 0) ||
+                            (opt->l_arg != NULL &&
+                             strlen(opt->l_arg) == equal_idx &&
+                             strncmp(opt->l_arg, arg, equal_idx) == 0)) {
+                            int ret = opt->func(params, &arg_i, argc, argv);
+                            if (ret != 0)
+                                exit(ret);
+                            is_opt = true;
+                        }
                     }
                 }
             }
@@ -129,15 +153,12 @@ void parse_opts(as_params * params, vector * files, int argc, char ** argv)
 
         if (!is_opt) {
             // interpret this as a file
-            // TODO: remove
-            printf("DBG: Added file %s\n", arg);
             vector_push_back(files, arg);
         }
     }
 }
-#include <unistd.h>
-#include <btn/print.h>
-#include <btn/ansi.h>
+
+bool enable_ansi = true;
 int main(int argc, char ** argv)
 {
     // construct the params
@@ -147,4 +168,9 @@ int main(int argc, char ** argv)
     vector_ctor(&files, sizeof(const char *), NULL, NULL);
 
     parse_opts(&driver_params, &files, argc, argv);
+
+    if (vector_size(&files) == 0) {
+        eprintf("No input files. Exiting...");
+        exit(AS_RET_NO_INPUT);
+    }
 }

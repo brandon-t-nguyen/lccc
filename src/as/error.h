@@ -7,11 +7,14 @@ extern "C" {
 #include <btn/ansi.h>
 #include <btn/print.h>
 
-#define eprintf(fmt, ...) afprintf(stderr,\
-                                   ANSI_F_BWHT "lccc-as: " ANSI_RESET \
-                                   ANSI_F_BRED "error: " ANSI_RESET fmt "\n"\
-                                   ,\
-                                   ##__VA_ARGS__)
+extern bool enable_ansi;
+
+#define eprintf(fmt, ...) aetfprintf(enable_ansi,\
+                                     stderr,\
+                                     ANSI_F_BWHT "lccc-as: " ANSI_RESET \
+                                     ANSI_F_BRED "error: " ANSI_RESET fmt "\n"\
+                                     ,\
+                                     ##__VA_ARGS__)
 // Note: ##__VA_ARGS__ is not really portable, but is supported by
 // gcc, llvm/clang, and VC++, so it's portable "enough"
 

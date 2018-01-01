@@ -32,6 +32,7 @@ typedef enum _as_ret
 {
     AS_RET_OK,
     AS_RET_NO_INPUT,
+    AS_RET_OTHER,
 } as_ret;
 
 typedef struct _as_opt
