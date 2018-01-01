@@ -7,7 +7,7 @@
 #include <btn/cstr.h>
 
 #include "as.h"
-#include "error.h"
+#include "print.h"
 
 #define DEF_PATT
 //#define DEF_LCCC
@@ -158,7 +158,6 @@ void parse_opts(as_params * params, vector * files, int argc, char ** argv)
     }
 }
 
-bool enable_ansi = true;
 int main(int argc, char ** argv)
 {
     // construct the params
@@ -169,8 +168,16 @@ int main(int argc, char ** argv)
 
     parse_opts(&driver_params, &files, argc, argv);
 
+    msg_set_level(M_VERBOSE);
+    msg(M_AS, M_FATAL, "Fatal");
+    msg(M_AS, M_ERROR, "Error");
+    msg(M_AS, M_WARN, "Warning");
+    msg(M_AS, M_INFO, "Info");
+    msg(M_AS, M_DEBUG, "Debug");
+    msg(M_AS, M_VERBOSE, "Verbose");
+
     if (vector_size(&files) == 0) {
-        eprintf("No input files. Exiting...");
+        msg(M_AS, M_FATAL, "No input files. Exiting...");
         exit(AS_RET_NO_INPUT);
     }
 }

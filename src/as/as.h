@@ -7,6 +7,8 @@ extern "C" {
 
 #include <stddef.h>
 
+#define M_AS "lccc-as"
+
 typedef enum _as_output_format
 {
     AS_OF_OBJ,

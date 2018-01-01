@@ -6,7 +6,7 @@
 #include <btn/cstr.h>
 
 #include "as.h"
-#include "error.h"
+#include "print.h"
 
 // This file contains the functions that modify the opts
 
@@ -39,14 +39,14 @@ int opt_version(as_params * params, int * arg_idx, int argc, char ** args)
 static
 int opt_color(as_params * params, int * arg_idx, int argc, char ** args)
 {
-    enable_ansi = true;
+    enable_ansi();
     return AS_RET_OK;
 }
 
 static
 int opt_no_color(as_params * params, int * arg_idx, int argc, char ** args)
 {
-    enable_ansi = false;
+    disable_ansi();
     return AS_RET_OK;
 }
 
@@ -56,7 +56,7 @@ int opt_output(as_params * params, int * arg_idx, int argc, char ** args)
     // take the next arg as the objfile
     *arg_idx += 1;
     if (*arg_idx >= argc) {
-        eprintf("No output file provided");
+        msg(M_AS, M_FATAL, "No output file provided");
         return AS_RET_OTHER;
     }
 
@@ -74,9 +74,10 @@ int opt_syntax(as_params * params, int * arg_idx, int argc, char ** args)
     } else if (strcmp(select, "lccc") == 0) {
         params->syntax = AS_SYNTAX_LCCC;
     } else {
-        eprintf("Unrecognized syntax \"" ANSI_F_BRED "%s" ANSI_RESET
-                "\" from argument \"%s\""
-                ,select, arg);
+        msg(M_AS, M_FATAL,
+            "Unrecognized syntax \"" ANSI_F_BRED "%s" ANSI_RESET
+            "\" from argument \"%s\""
+            ,select, arg);
         return AS_RET_OTHER;
     }
 
@@ -94,9 +95,10 @@ int opt_out_format(as_params * params, int * arg_idx, int argc, char ** args)
     } else if (strcmp(select, "llf") == 0) {
         params->syntax = AS_OF_LLF;
     } else {
-        eprintf("Unrecognized format \"" ANSI_F_BRED "%s" ANSI_RESET
-                "\" from argument \"%s\""
-                ,select, arg);
+        msg(M_AS, M_FATAL,
+            "Unrecognized format \"" ANSI_F_BRED "%s" ANSI_RESET
+            "\" from argument \"%s\""
+            ,select, arg);
         return AS_RET_OTHER;
     }
 
