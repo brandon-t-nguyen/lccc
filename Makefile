@@ -3,15 +3,26 @@ export BINDIR = $(PROOT)/bin
 export OBJDIR = $(PROOT)/obj
 export LIBDIR = $(PROOT)/lib
 
+export PLATFORM = UNIX
+#export PLATFORM = WINDOWS
+
+ifeq ($(PLATFORM), UNIX)
 export CC = gcc
+export CXX = g++
 export LD = ld
-export CFLAGS =-Wall -Wextra -g
-export INCLUDE = -I$(PROOT)/inc
+export AR = ar
+else ifeq ($(PLATFORM), WINDOWS)
+export CC = x86_64-w64-mingw32-gcc
+export CXX = x86_64-w64-mingw32-g++
+export LD = x86_64-w64-mingw32-ld
+export AR = x86_64-w64-mingw32-ar
+endif
+
+export CFLAGS = -Wall -Wextra -Wno-unused-parameter -g -DPLATFORM_$(PLATFORM)
 export LIBS   = -L$(LIBDIR) -lbtn
+export INCLUDE = -I$(PROOT)/inc
 
 export LIB_DEPEND = $(LIBDIR)/libbtn.a
-
-export CFLAGS +=-DDEBUG
 
 BASE = src
 
@@ -32,10 +43,11 @@ cc: $(LIB_DEPEND)
 all: $(LIB_DEPEND)
 
 clean:
-	#rm -rf cscope
+	@#rm -rf cscope
 	rm -rf $(BINDIR)
 	rm -rf $(OBJDIR)
 	rm -rf $(LIBDIR)
+	+$(MAKE) clean -C external/libbtn
 
 cscope:
 	mkdir -p cscope
