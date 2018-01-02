@@ -7,6 +7,7 @@
 
 #include "as.h"
 #include "print.h"
+#include "option.h"
 
 // This file contains the functions that modify the opts
 
@@ -23,48 +24,52 @@ extern void print_help(void);
 extern void print_version(void);
 
 static
-int opt_help(as_params * params, const char * arg, const char * assign)
+int opt_help(void * aux, const char * arg, const char * assign)
 {
     print_help();
     exit(AS_RET_OK);
 }
 
 static
-int opt_version(as_params * params, const char * arg, const char * assign)
+int opt_version(void * aux, const char * arg, const char * assign)
 {
     print_version();
     exit(AS_RET_OK);
 }
 
 static
-int opt_color(as_params * params, const char * arg, const char * assign)
+int opt_color(void * aux, const char * arg, const char * assign)
 {
     enable_ansi();
     return AS_RET_OK;
 }
 
 static
-int opt_no_color(as_params * params, const char * arg, const char * assign)
+int opt_no_color(void * aux, const char * arg, const char * assign)
 {
     disable_ansi();
     return AS_RET_OK;
 }
 
 static
-int opt_output(as_params * params, const char * arg, const char * assign)
+int opt_output(void * aux, const char * arg, const char * assign)
 {
+    as_params * params = (as_params *) aux;
     // take the next arg as the objfile
     if (assign == NULL) {
         msg(M_AS, M_FATAL, "No output file provided");
         return AS_RET_OTHER;
     }
 
+    params->output_file = assign;
+
     return AS_RET_OK;
 }
 
 static
-int opt_syntax(as_params * params, const char * arg, const char * assign)
+int opt_syntax(void * aux, const char * arg, const char * assign)
 {
+    as_params * params = (as_params *) aux;
     if (strcmp(assign, "patt") == 0) {
         params->syntax = AS_SYNTAX_PATT;
     } else if (strcmp(assign, "lccc") == 0) {
@@ -81,15 +86,16 @@ int opt_syntax(as_params * params, const char * arg, const char * assign)
 }
 
 static
-int opt_out_format(as_params * params, const char * arg, const char * assign)
+int opt_out_format(void * aux, const char * arg, const char * assign)
 {
+    as_params * params = (as_params *) aux;
     if (strcmp(assign, "obj") == 0) {
         params->syntax = AS_OF_OBJ;
     } else if (strcmp(assign, "llf") == 0) {
         params->syntax = AS_OF_LLF;
     } else {
         msg(M_AS, M_FATAL,
-            "Unrecognized format '" ANSI_F_BWHT "%s" ANSI_RESET
+            "Unrecognized output format '" ANSI_F_BWHT "%s" ANSI_RESET
             "' from argument " ANSI_F_BWHT "'%s'"
             ,assign, arg);
         return AS_RET_OTHER;
@@ -99,32 +105,57 @@ int opt_out_format(as_params * params, const char * arg, const char * assign)
 }
 
 static
-int opt_in_format(as_params * params, const char * arg, const char * assign)
+int opt_in_format(void * aux, const char * arg, const char * assign)
 {
+    as_params * params = (as_params *) aux;
+    as_ret ret = AS_RET_OK;
+    if (strcmp(assign, "asm") == 0) {
+        params->iformat = AS_IF_ASM;
+    }
+    else if (strcmp(assign, "hex") == 0) {
+        params->iformat = AS_IF_HEX;
+    }
+    else if (strcmp(assign, "bin") == 0) {
+        params->iformat = AS_IF_BIN;
+    } else {
+        msg(M_AS, M_FATAL,
+            "Unrecognized input format '" ANSI_F_BWHT "%s" ANSI_RESET
+            "' from argument " ANSI_F_BWHT "'%s'"
+            ,assign, arg);
+        ret = AS_RET_OTHER;
+    }
+    return ret;
+}
+
+static
+int opt_obj_hex(void * aux, const char * arg, const char * assign)
+{
+    as_params * params = (as_params *) aux;
+    params->out_hex = true;
     return AS_RET_OK;
 }
 
 static
-int opt_obj_hex(as_params * params, const char * arg, const char * assign)
+int opt_obj_bin(void * aux, const char * arg, const char * assign)
 {
+    as_params * params = (as_params *) aux;
+    params->out_bin = true;
     return AS_RET_OK;
 }
 
 static
-int opt_obj_bin(as_params * params, const char * arg, const char * assign)
+int opt_obj_sym(void * aux, const char * arg, const char * assign)
 {
+    as_params * params = (as_params *) aux;
+    params->out_sym = true;
     return AS_RET_OK;
 }
 
 static
-int opt_obj_sym(as_params * params, const char * arg, const char * assign)
+int opt_obj_lst(void * aux, const char * arg, const char * assign)
 {
-    return AS_RET_OK;
-}
-
-static
-int opt_obj_lst(as_params * params, const char * arg, const char * assign)
-{
+    as_params * params = (as_params *) aux;
+    params->out_lst = true;
     return AS_RET_OK;
 }
 
@@ -136,7 +167,7 @@ int opt_obj_lst(as_params * params, const char * arg, const char * assign)
 #define DEF_FORMAT "llf"
 #endif
 
-const as_opt as_options[] = {
+const option as_options[] = {
     {"-h", "--help",        false,  opt_help,       NULL,   NULL,
         "Shows this help prompt and exits"},
     {NULL, "--version",     false,  opt_version,    NULL,   NULL,
