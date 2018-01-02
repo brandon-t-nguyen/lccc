@@ -1,10 +1,9 @@
-PROOT = $(shell pwd)
+export PROOT  = $(shell pwd)
 export BINDIR = $(PROOT)/bin
 export OBJDIR = $(PROOT)/obj
 export LIBDIR = $(PROOT)/lib
 
-export PLATFORM = UNIX
-#export PLATFORM = WINDOWS
+include vars.mk
 
 ifeq ($(PLATFORM), UNIX)
 export CC = gcc
@@ -18,7 +17,7 @@ export LD = x86_64-w64-mingw32-ld
 export AR = x86_64-w64-mingw32-ar
 endif
 
-export CFLAGS = -Wall -Wextra -Wno-unused-parameter -g -DPLATFORM_$(PLATFORM)
+export CFLAGS = -Wall -Wextra -Wno-unused-parameter -g -DPLATFORM_$(PLATFORM) -DDEF_$(DEFAULT)
 export LIBS   = -L$(LIBDIR) -lbtn
 export INCLUDE = -I$(PROOT)/inc
 
