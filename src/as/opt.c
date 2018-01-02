@@ -23,39 +23,38 @@ extern void print_help(void);
 extern void print_version(void);
 
 static
-int opt_help(as_params * params, int * arg_idx, int argc, char ** args)
+int opt_help(as_params * params, const char * arg, const char * assign)
 {
     print_help();
     exit(AS_RET_OK);
 }
 
 static
-int opt_version(as_params * params, int * arg_idx, int argc, char ** args)
+int opt_version(as_params * params, const char * arg, const char * assign)
 {
     print_version();
     exit(AS_RET_OK);
 }
 
 static
-int opt_color(as_params * params, int * arg_idx, int argc, char ** args)
+int opt_color(as_params * params, const char * arg, const char * assign)
 {
     enable_ansi();
     return AS_RET_OK;
 }
 
 static
-int opt_no_color(as_params * params, int * arg_idx, int argc, char ** args)
+int opt_no_color(as_params * params, const char * arg, const char * assign)
 {
     disable_ansi();
     return AS_RET_OK;
 }
 
 static
-int opt_output(as_params * params, int * arg_idx, int argc, char ** args)
+int opt_output(as_params * params, const char * arg, const char * assign)
 {
     // take the next arg as the objfile
-    *arg_idx += 1;
-    if (*arg_idx >= argc) {
+    if (assign == NULL) {
         msg(M_AS, M_FATAL, "No output file provided");
         return AS_RET_OTHER;
     }
@@ -64,20 +63,17 @@ int opt_output(as_params * params, int * arg_idx, int argc, char ** args)
 }
 
 static
-int opt_syntax(as_params * params, int * arg_idx, int argc, char ** args)
+int opt_syntax(as_params * params, const char * arg, const char * assign)
 {
-    const char * arg    = args[*arg_idx];
-    const char * select = get_assign(arg);
-
-    if (strcmp(select, "patt") == 0) {
+    if (strcmp(assign, "patt") == 0) {
         params->syntax = AS_SYNTAX_PATT;
-    } else if (strcmp(select, "lccc") == 0) {
+    } else if (strcmp(assign, "lccc") == 0) {
         params->syntax = AS_SYNTAX_LCCC;
     } else {
         msg(M_AS, M_FATAL,
             "Unrecognized syntax '" ANSI_F_BWHT "%s" ANSI_RESET
             "' from argument " ANSI_F_BWHT "'%s'"
-            ,select, arg);
+            ,assign, arg);
         return AS_RET_OTHER;
     }
 
@@ -85,20 +81,17 @@ int opt_syntax(as_params * params, int * arg_idx, int argc, char ** args)
 }
 
 static
-int opt_out_format(as_params * params, int * arg_idx, int argc, char ** args)
+int opt_out_format(as_params * params, const char * arg, const char * assign)
 {
-    const char * arg    = args[*arg_idx];
-    const char * select = get_assign(arg);
-
-    if (strcmp(select, "obj") == 0) {
+    if (strcmp(assign, "obj") == 0) {
         params->syntax = AS_OF_OBJ;
-    } else if (strcmp(select, "llf") == 0) {
+    } else if (strcmp(assign, "llf") == 0) {
         params->syntax = AS_OF_LLF;
     } else {
         msg(M_AS, M_FATAL,
             "Unrecognized format '" ANSI_F_BWHT "%s" ANSI_RESET
             "' from argument " ANSI_F_BWHT "'%s'"
-            ,select, arg);
+            ,assign, arg);
         return AS_RET_OTHER;
     }
 
@@ -106,31 +99,31 @@ int opt_out_format(as_params * params, int * arg_idx, int argc, char ** args)
 }
 
 static
-int opt_in_format(as_params * params, int * arg_idx, int argc, char ** args)
+int opt_in_format(as_params * params, const char * arg, const char * assign)
 {
     return AS_RET_OK;
 }
 
 static
-int opt_obj_hex(as_params * params, int * arg_idx, int argc, char ** args)
+int opt_obj_hex(as_params * params, const char * arg, const char * assign)
 {
     return AS_RET_OK;
 }
 
 static
-int opt_obj_bin(as_params * params, int * arg_idx, int argc, char ** args)
+int opt_obj_bin(as_params * params, const char * arg, const char * assign)
 {
     return AS_RET_OK;
 }
 
 static
-int opt_obj_sym(as_params * params, int * arg_idx, int argc, char ** args)
+int opt_obj_sym(as_params * params, const char * arg, const char * assign)
 {
     return AS_RET_OK;
 }
 
 static
-int opt_obj_lst(as_params * params, int * arg_idx, int argc, char ** args)
+int opt_obj_lst(as_params * params, const char * arg, const char * assign)
 {
     return AS_RET_OK;
 }
@@ -144,7 +137,7 @@ const as_opt as_options[] = {
         "Turns on color printing"},
     {NULL, "--no-color",    false,  opt_no_color,       NULL,
         "Turns off color printing"},
-    {"-o", "--output",      false,  opt_output,         "OBJFILE",
+    {"-o", "--output",      true,   opt_output,         "OBJFILE",
         "Set the name of the object file (defaults to \"out.obj\")"},
     {NULL, "--syntax",      true,   opt_syntax,         "[patt|lccc]",
         "Sets the assembler syntax to Patt or LCCC"},

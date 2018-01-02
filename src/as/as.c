@@ -56,7 +56,7 @@ void print_opt(const as_opt * opt)
             opt_len += 2;
         } else if (opt->p_str) {
             if (opt->assign)
-                fputs("=", stdout);
+                fputs(" ", stdout);
             else
                 fputs(" ", stdout);
             opt_len += 1;
@@ -67,7 +67,7 @@ void print_opt(const as_opt * opt)
         opt_len += strlen(opt->l_arg);
         if (opt->p_str) {
             if (opt->assign)
-                fputs("=", stdout);
+                fputs(" ", stdout);
             else
                 fputs(" ", stdout);
             opt_len += 1;
@@ -133,34 +133,60 @@ static inline
 bool check_opt(const as_opt * opt, int * parg_i, const char * arg,
                as_params * params, vector * files, int argc, char ** argv)
 {
+    bool match = false;
     // typical case: match against the short arg or long arg
     if (!opt->assign) {
         if ((opt->s_arg && strcmp(opt->s_arg, arg) == 0) ||
             (opt->l_arg && strcmp(opt->l_arg, arg) == 0)) {
-            int ret = opt->func(params, parg_i, argc, argv);
+            int ret = opt->func(params, arg, NULL);
             if (ret != 0)
                 exit(ret);
-            return true;
+            match = true;
         }
     } else {
-        // check for equal sign
-        size_t equal_idx = strcfind(arg, '=', 0);
-        if (equal_idx != SIZE_MAX) {
-            // check if arg is right length and passes strcmp
-            if ((opt->s_arg != NULL &&
-                 strlen(opt->s_arg) == equal_idx &&
-                 strncmp(opt->s_arg, arg, equal_idx) == 0) ||
-                (opt->l_arg != NULL &&
-                 strlen(opt->l_arg) == equal_idx &&
-                 strncmp(opt->l_arg, arg, equal_idx) == 0)) {
-                int ret = opt->func(params, parg_i, argc, argv);
-                if (ret != 0)
-                    exit(ret);
-                return true;
+        const char * assign = NULL;
+
+        if (opt->s_arg != NULL && arg[1] == opt->s_arg[1]) {
+            match = true;
+            // for short args
+            // opt-arg can either come from arg itself or next arg
+            if (arg[2] != '\0') {
+                assign = &arg[2];
+            } else {
+                // next arg
+                (*parg_i) += 1;
+                if (*parg_i < argc)
+                    assign = argv[*parg_i];
+            }
+        } else if (opt->l_arg != NULL) {
+            // long args are a bit more complicated: can use = or space
+            size_t equal_idx = strcfind(arg, '=', 0);
+            if (equal_idx != SIZE_MAX) {
+                // found an equal: need to use strncmp
+                if (strncmp(opt->l_arg, arg, equal_idx) == 0) {
+                    match = true;
+                    assign = &arg[equal_idx + 1];
+                }
+            } else {
+                // no equal: try straight strcmp
+                if (strcmp(opt->l_arg, arg) == 0) {
+                    match = true;
+                    // next arg
+                    (*parg_i) += 1;
+                    if (*parg_i < argc)
+                        assign = argv[*parg_i];
+                }
             }
         }
+        if (match) {
+            if (assign != NULL && assign[0] == '\0')
+                assign = NULL;
+            int ret = opt->func(params, arg, assign);
+            if (ret != 0)
+                exit(ret);
+        }
     }
-    return false;
+    return match;
 }
 
 void parse_opts(as_params * params, vector * files, int argc, char ** argv)
@@ -178,9 +204,9 @@ void parse_opts(as_params * params, vector * files, int argc, char ** argv)
                 continue;
             }
 
-            for (size_t opt_i = 0; opt_i < as_num_options; ++opt_i) {
+            for (size_t opt_i = 0; !is_opt && opt_i < as_num_options; ++opt_i) {
                 const as_opt * opt = &as_options[opt_i];
-                if (opt->func == NULL)
+                if (opt->func == NULL)  // is printing metadata
                     continue;
                 is_opt = check_opt(opt, &arg_i, arg, params, files, argc, argv);
             }

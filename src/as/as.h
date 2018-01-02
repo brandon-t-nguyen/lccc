@@ -48,7 +48,7 @@ typedef struct _as_opt
     //      if assign is true, it starts a section of arguments or ends one if
     //      it is already in a section. In the case a section has already started,
     //      d_str will be irrelevant
-    int (* func)(as_params * params, int * arg_idx, int argc, char ** args);
+    int (* func)(as_params * params, const char * arg, const char * assign);
     const char * p_str; // help parameter for option
     const char * d_str; // help details for option
 } as_opt;
