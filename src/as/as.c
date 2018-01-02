@@ -51,33 +51,30 @@ void print_opt(const as_opt * opt)
     if (opt->s_arg) {
         fputs(opt->s_arg, stdout);
         opt_len += strlen(opt->s_arg);
+
+        // print opt-arg if there
+        if (opt->p_str) {
+            printf(" %s", opt->p_str);
+            opt_len += strlen(opt->p_str) + 1;
+        }
+
         if (opt->l_arg) {
             fputs(", ", stdout);
             opt_len += 2;
-        } else if (opt->p_str) {
-            if (opt->assign)
-                fputs(" ", stdout);
-            else
-                fputs(" ", stdout);
-            opt_len += 1;
         }
     }
     if (opt->l_arg) {
         fputs(opt->l_arg, stdout);
         opt_len += strlen(opt->l_arg);
+
+        // print out the opt-arg with =
         if (opt->p_str) {
-            if (opt->assign)
-                fputs(" ", stdout);
-            else
-                fputs(" ", stdout);
-            opt_len += 1;
+            printf("=%s", opt->p_str);
+            opt_len += strlen(opt->p_str) + 1;
         }
     }
-    if (opt->p_str) {
-        fputs(opt->p_str, stdout);
-        opt_len += strlen(opt->p_str);
-    }
 
+    // fill out spaces until the details
     for (size_t i = opt_len; i < DETAIL_INDENT; ++i) {
         fputs(" ", stdout);
     }
