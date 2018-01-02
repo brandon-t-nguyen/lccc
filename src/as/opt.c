@@ -128,44 +128,51 @@ int opt_obj_lst(as_params * params, const char * arg, const char * assign)
     return AS_RET_OK;
 }
 
+#if defined DEF_PATT
+#define DEF_SYNTAX "patt"
+#define DEF_FORMAT "obj"
+#elif defined DEF_LCCC
+#define DEF_SYNTAX "lccc"
+#define DEF_FORMAT "llf"
+#endif
+
 const as_opt as_options[] = {
-    {"-h", "--help",        false,  opt_help,           NULL,
+    {"-h", "--help",        false,  opt_help,       NULL,   NULL,
         "Shows this help prompt and exits"},
-    {NULL, "--version",     false,  opt_version,        NULL,
+    {NULL, "--version",     false,  opt_version,    NULL,   NULL,
         "Shows the version information"},
-    {NULL, "--color",       false,  opt_color,          NULL,
+    {NULL, "--color",       false,  opt_color,      NULL,   NULL,
         "Turns on color printing"},
-    {NULL, "--no-color",    false,  opt_no_color,       NULL,
+    {NULL, "--no-color",    false,  opt_no_color,   NULL,   NULL,
         "Turns off color printing"},
-    {"-o", "--output",      true,   opt_output,         "OBJFILE",
-        "Set the name of the object file (defaults to \"out.obj\")"},
-    {NULL, "--syntax",      true,   opt_syntax,         "[patt|lccc]",
+    {"-o", "--output",      true,   opt_output,     "OBJFILE",      "out.obj",
+        "Set the name of the object file"},
+    {NULL, "--syntax",      true,   opt_syntax,     "[patt|lccc]",  DEF_SYNTAX,
         "Sets the assembler syntax to Patt or LCCC"},
-    {NULL, "--out-format",  true,   opt_out_format,     "[obj|llf]",
+    {NULL, "--out-format",  true,   opt_out_format, "[obj|llf]",    DEF_FORMAT,
         "Sets the output format to .obj or LLF"},
+    {NULL, "--lst",         false,  opt_obj_lst,    NULL,   NULL,
+        "Produce a symtol table file\n"
+        "Output file retains the filename except with a\n"
+        ".sym extension"},
 
-
-    {NULL, NULL, true, NULL, NULL,
+    {NULL, NULL, true, NULL, NULL, NULL,
         "These following options are relevant when the output format is .obj"},
-    {NULL, "--in-format",   true,   opt_in_format,     "[asm|bin|hex] (default asm)",
+    {NULL, "--in-format",   true,   opt_in_format,  "[asm|bin|hex]", "asm",
         "Sets the input format to assemble/translate"},
-    {NULL, "--hex",         false,  opt_obj_hex,        NULL,
+    {NULL, "--hex",         false,  opt_obj_hex,    NULL,   NULL,
         "Produce plaintext hexadecimal file\n"
         "Output file retains the filename except with a\n"
         ".hex extension"},
-    {NULL, "--bin",         false,  opt_obj_bin,        NULL,
+    {NULL, "--bin",         false,  opt_obj_bin,    NULL,   NULL,
         "Produce plaintext binary file\n"
         "Output file retains the filename except with a\n"
         ".bin extension"},
-    {NULL, "--sym",         false,  opt_obj_sym,        NULL,
+    {NULL, "--sym",         false,  opt_obj_sym,    NULL,   NULL,
         "Produce a symtol table file\n"
         "Output file retains the filename except with a\n"
         ".sym extension"},
-    {NULL, "--lst",         false,  opt_obj_lst,        NULL,
-        "Produce a symtol table file\n"
-        "Output file retains the filename except with a\n"
-        ".sym extension"},
-    {NULL, NULL, true, NULL, NULL, NULL},
+    {NULL, NULL, true, NULL, NULL, NULL, NULL},
 
 };
 size_t as_num_options = ARRAY_LEN(as_options);

@@ -83,6 +83,12 @@ void print_opt(const as_opt * opt)
         }
     }
 
+    // print out the default
+    if (opt->pd_str) {
+        printf(" (default '%s')", opt->pd_str);
+        opt_len += strlen(opt->pd_str) + 13;
+    }
+
     // fill out spaces until the details
     for (size_t i = opt_len; i < DETAIL_INDENT; ++i) {
         fputs(" ", stdout);

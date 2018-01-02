@@ -63,6 +63,7 @@ typedef struct _as_opt
     //      d_str will be irrelevant
     int (* func)(as_params * params, const char * arg, const char * assign);
     const char * p_str; // help parameter for option
+    const char * pd_str;// default option (NULL if not relevant)
     const char * d_str; // help details for option
 } as_opt;
 
