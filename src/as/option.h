@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <btn/vector.h>
+
 typedef struct option
 {
     const char * s_arg; // short arg

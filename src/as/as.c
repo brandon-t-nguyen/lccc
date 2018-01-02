@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <errno.h>
 
 #include <btn/vector.h>
 #include <btn/cstr.h>
@@ -62,14 +63,41 @@ int main(int argc, char ** argv)
 {
     // construct the params
     as_params driver_params = DEFAULT_PARAMS;
-    vector(const char *) files;
-    vector_ctor(&files, sizeof(const char *), NULL, NULL);
+    vector(const char *) file_names;
+    vector(FILE *) files;
+    vector_ctor(&file_names, sizeof(const char *), NULL, NULL);
+    vector_ctor(&files, sizeof(FILE *), NULL, NULL);
 
     parse_options(M_AS, as_options, as_num_options,
-                  &driver_params, &files, argc, argv);
+                  &driver_params, &file_names, argc, argv);
 
-    if (vector_size(&files) == 0) {
+    size_t num_files = vector_size(&file_names);
+    if (num_files == 0) {
         msg(M_AS, M_FATAL, "No input files");
         exit(AS_RET_NO_INPUT);
     }
+
+    // open the files
+    for (size_t i = 0; i < num_files; ++i) {
+        const char * path = NULL;
+        vector_get(&file_names, i, &path);
+        FILE * file = fopen(path, "r");
+        if (file == NULL) {
+            switch (errno) {
+            case ENOENT:
+                msg(M_AS, M_FATAL,
+                    ANSI_F_BWHT "%s" ANSI_RESET ": No such file or directory",
+                    path);
+                break;
+            default:
+                msg(M_AS, M_FATAL,
+                    ANSI_F_BWHT "%s" ANSI_RESET ": Unable to open file or directory",
+                    path);
+                break;
+            }
+            exit(AS_RET_BAD_INPUT);
+        } else {
+        }
+    }
+
 }

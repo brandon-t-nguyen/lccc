@@ -188,7 +188,7 @@ void parse_options(const char * src, const option * options, size_t num_options,
             }
         } else {
             // interpret this as a non-option
-            vector_push_back(non_options, arg);
+            vector_push_back(non_options, &arg);
         }
     }
 }
