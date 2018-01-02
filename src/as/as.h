@@ -42,6 +42,12 @@ typedef struct _as_opt
     const char * s_arg; // short arg
     const char * l_arg; // long form
     bool assign;        // is an assignment: looks for =
+    // function to run when this option is used
+    // has control to increment arg_idx to consume additional spaced arguments
+    // if NULL, this option becomes annotation text for --help
+    //      if assign is true, it starts a section of arguments or ends one if
+    //      it is already in a section. In the case a section has already started,
+    //      d_str will be irrelevant
     int (* func)(as_params * params, int * arg_idx, int argc, char ** args);
     const char * p_str; // help parameter for option
     const char * d_str; // help details for option

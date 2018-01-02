@@ -56,7 +56,7 @@ void vfmsg(FILE * file, const char * src, msg_level level, const char * fmt,
         return;
 
     char * buf = (char *) malloc(sizeof(char) * BUF_SIZE);
-    snprintf(buf, BUF_SIZE, ANSI_RESET ANSI_F_BWHT "%s: %s: %s\n",
+    snprintf(buf, BUF_SIZE, ANSI_RESET ANSI_F_BWHT "%s: %s: %s\n" ANSI_RESET,
              src, msg_level_str(level), fmt);
     aetvfprintf(ansi_enable, file, buf, ap);
     free(buf);

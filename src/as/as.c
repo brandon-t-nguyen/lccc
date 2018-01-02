@@ -105,9 +105,62 @@ void print_help(void)
 {
     printf("Usage: lccc-as [options...] [assembly source files...]\n");
     printf("Options:\n");
+    bool section = false;
     for (size_t i = 0; i < as_num_options; ++i) {
-        print_opt(&as_options[i]);
+        const as_opt * opt = &as_options[i];
+        if (opt->func == NULL) {
+            if (opt->assign) {
+                if (section) {
+                    // already in section: end section
+                    puts("");
+                    section = false;
+                } else {
+                    // not section: start a new section
+                    puts("");
+                    puts(opt->d_str);
+                    section = true;
+                }
+            } else {
+                puts(opt->d_str);
+            }
+            continue;
+        }
+        print_opt(opt);
     }
+}
+
+static inline
+bool check_opt(const as_opt * opt, int * parg_i, const char * arg,
+               as_params * params, vector * files, int argc, char ** argv)
+{
+    // typical case: match against the short arg or long arg
+    if (!opt->assign) {
+        if ((opt->s_arg && strcmp(opt->s_arg, arg) == 0) ||
+            (opt->l_arg && strcmp(opt->l_arg, arg) == 0)) {
+            int ret = opt->func(params, parg_i, argc, argv);
+            if (ret != 0)
+                exit(ret);
+            return true;
+        }
+    } else {
+        // check for equal sign
+        size_t equal_idx = strcfind(arg, '=', 0);
+        if (equal_idx != SIZE_MAX) {
+            // check if arg is right length and passes strcmp
+            if ((opt->s_arg != NULL &&
+                 strlen(opt->s_arg) == equal_idx &&
+                 strncmp(opt->s_arg, arg, equal_idx) == 0) ||
+                (opt->l_arg != NULL &&
+                 strlen(opt->l_arg) == equal_idx &&
+                 strncmp(opt->l_arg, arg, equal_idx) == 0)) {
+                int ret = opt->func(params, parg_i, argc, argv);
+                if (ret != 0)
+                    exit(ret);
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void parse_opts(as_params * params, vector * files, int argc, char ** argv)
@@ -115,43 +168,29 @@ void parse_opts(as_params * params, vector * files, int argc, char ** argv)
     for (int arg_i = 1; arg_i < argc; ++arg_i) {
         const char * arg = argv[arg_i];
         bool is_opt = false;
+        bool check_opts = true;
 
         // check against the options if arg starts with a dash
-        if (arg[0] == '-') {
+        if (check_opts && arg[0] == '-') {
+            // "--" will turn off future opt checking
+            if (strcmp("--", arg) == 0) {
+                check_opts = false;
+                continue;
+            }
+
             for (size_t opt_i = 0; opt_i < as_num_options; ++opt_i) {
                 const as_opt * opt = &as_options[opt_i];
-                // typical case: match against the short arg or long arg
-                if (!opt->assign) {
-                    if ((opt->s_arg && strcmp(opt->s_arg, arg) == 0) ||
-                        (opt->l_arg && strcmp(opt->l_arg, arg) == 0)) {
-                        int ret = opt->func(params, &arg_i, argc, argv);
-                        if (ret != 0)
-                            exit(ret);
-                        is_opt = true;
-                        break;
-                    }
-                } else {
-                    // check for equal sign
-                    size_t equal_idx = strcfind(arg, '=', 0);
-                    if (equal_idx != SIZE_MAX) {
-                        // check if arg is right length and passes strcmp
-                        if ((opt->s_arg != NULL &&
-                             strlen(opt->s_arg) == equal_idx &&
-                             strncmp(opt->s_arg, arg, equal_idx) == 0) ||
-                            (opt->l_arg != NULL &&
-                             strlen(opt->l_arg) == equal_idx &&
-                             strncmp(opt->l_arg, arg, equal_idx) == 0)) {
-                            int ret = opt->func(params, &arg_i, argc, argv);
-                            if (ret != 0)
-                                exit(ret);
-                            is_opt = true;
-                        }
-                    }
-                }
+                if (opt->func == NULL)
+                    continue;
+                is_opt = check_opt(opt, &arg_i, arg, params, files, argc, argv);
             }
-        }
 
-        if (!is_opt) {
+            if (!is_opt) {
+                msg(M_AS, M_ERROR,
+                    "Unrecognized command line option " ANSI_F_BWHT "'%s'",
+                    arg);
+            }
+        } else {
             // interpret this as a file
             vector_push_back(files, arg);
         }
@@ -168,16 +207,8 @@ int main(int argc, char ** argv)
 
     parse_opts(&driver_params, &files, argc, argv);
 
-    msg_set_level(M_VERBOSE);
-    msg(M_AS, M_FATAL, "Fatal");
-    msg(M_AS, M_ERROR, "Error");
-    msg(M_AS, M_WARN, "Warning");
-    msg(M_AS, M_INFO, "Info");
-    msg(M_AS, M_DEBUG, "Debug");
-    msg(M_AS, M_VERBOSE, "Verbose");
-
     if (vector_size(&files) == 0) {
-        msg(M_AS, M_FATAL, "No input files. Exiting...");
+        msg(M_AS, M_FATAL, "No input files");
         exit(AS_RET_NO_INPUT);
     }
 }
