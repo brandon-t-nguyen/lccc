@@ -9,25 +9,34 @@
 #include "as.h"
 #include "print.h"
 
-#define DEF_PATT
-//#define DEF_LCCC
-
 static const as_params default_patt = {
-    .format = AS_OF_OBJ,
-    .syntax = AS_SYNTAX_PATT
+    .oformat = AS_OF_OBJ,
+    .iformat = AS_IF_ASM,
+    .syntax  = AS_SYNTAX_PATT,
+    .output_file = "out.obj",
+    .out_hex = false,
+    .out_bin = false,
+    .out_sym = false,
+    .out_lst = false,
 };
 
 static const as_params default_lccc  = {
-    .format = AS_OF_LLF,
-    .syntax = AS_SYNTAX_LCCC
+    .oformat = AS_OF_LLF,
+    .iformat = AS_IF_ASM,
+    .syntax = AS_SYNTAX_LCCC,
+    .output_file = "out.obj",
+    .out_hex = false,
+    .out_bin = false,
+    .out_sym = false,
+    .out_lst = false,
 };
 
 #if defined DEF_PATT
 #define DEFAULT_PARAMS default_patt
-#define COMPILE_STRING "Classic version: defaults to the Patt's assembler syntax and McGraw-Hill toolchain .obj format\n"
+#define COMPILE_STRING "Patt version: defaults to the Patt's assembler syntax and McGraw-Hill toolchain .obj format\n"
 #elif defined DEF_LCCC
 #define DEFAULT_PARAMS default_lccc
-#define COMPILE_STRING "lccc version: defaults to the lccc assembler syntax and LLF binary output format\n"
+#define COMPILE_STRING "LCCC version: defaults to the LCCC assembler syntax and LLF binary output format\n"
 #endif
 
 extern const as_opt as_options[];
@@ -224,7 +233,6 @@ int main(int argc, char ** argv)
 {
     // construct the params
     as_params driver_params = DEFAULT_PARAMS;
-    driver_params.output_file = "out.obj";
     vector(const char *) files;
     vector_ctor(&files, sizeof(const char *), NULL, NULL);
 

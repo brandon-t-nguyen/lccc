@@ -16,6 +16,14 @@ typedef enum _as_output_format
     AS_OF_NUM_FORMATS
 } as_output_format;
 
+typedef enum _as_input_format
+{
+    AS_IF_ASM,
+    AS_IF_HEX,
+    AS_IF_BIN,
+    AS_IF_NUM_FORMATS
+} as_input_format;
+
 typedef enum _as_syntax
 {
     AS_SYNTAX_PATT,
@@ -25,9 +33,14 @@ typedef enum _as_syntax
 
 typedef struct _as_params
 {
-    as_output_format    format;
+    as_input_format     iformat;
+    as_output_format    oformat;
     as_syntax           syntax;
-    const char * output_file;
+    const char *        output_file;
+    bool                out_hex;
+    bool                out_bin;
+    bool                out_sym;
+    bool                out_lst;
 } as_params;
 
 typedef enum _as_ret
