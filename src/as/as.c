@@ -26,7 +26,7 @@ static const as_params default_lccc  = {
     .oformat = AS_OF_LLF,
     .iformat = AS_IF_ASM,
     .syntax = AS_SYNTAX_LCCC,
-    .output_file = "out.obj",
+    .output_file = "out.o",
     .out_hex = false,
     .out_bin = false,
     .out_sym = false,
@@ -97,7 +97,20 @@ int main(int argc, char ** argv)
             }
             exit(AS_RET_BAD_INPUT);
         } else {
+            vector_push_back(&files, &file);
         }
     }
 
+    // pass the files to the assembler implementation
+    // TODO
+
+    // cleanup
+    for (size_t i = 0; i < num_files; ++i) {
+        FILE * file;
+        vector_get(&files, i, &file);
+        fclose(file);
+    }
+
+    vector_dtor(&files);
+    vector_dtor(&file_names);
 }
