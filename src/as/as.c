@@ -102,7 +102,7 @@ int main(int argc, char ** argv)
     }
 
     // pass the files to the assembler implementation
-    // TODO
+    asm_patt(&driver_params, &file_names, &files);
 
     // cleanup
     for (size_t i = 0; i < num_files; ++i) {
