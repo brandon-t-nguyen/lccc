@@ -18,6 +18,7 @@ typedef struct _asm_line
 {
     unsigned int number;
     vector(char *) tokens;
+    char * raw;
 } asm_line;
 
 void asm_line_ctor(asm_line * line);
@@ -25,7 +26,7 @@ void asm_line_dtor(asm_line * line);
 
 typedef struct _asm_source
 {
-    char * name;
+    const char * name;
     vector(line) lines;
 } asm_source;
 

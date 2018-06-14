@@ -110,6 +110,23 @@ typedef enum _rd_state
     RD_IGNORE,      // ignores rest of line
 } rd_state;
 
+#define TILDE_COUNT 4
+static
+void show_line_error(const char * line, size_t pos)
+{
+    printf("%s\n", line);
+    if (pos >= TILDE_COUNT) {
+        for (size_t i = 0; i < pos - 1 - TILDE_COUNT; ++i) {
+            fputc(' ', stdout);
+        }
+    }
+    printf(ANSI_BOLD ANSI_F_BWHT);
+    for (size_t i = pos - 1 - TILDE_COUNT; i < pos - 1; ++i) {
+        fputc('~', stdout);
+    }
+    printf(ANSI_F_BMAG "^\n" ANSI_RESET);
+}
+
 static
 char * read_line(FILE * f)
 {
@@ -117,8 +134,13 @@ char * read_line(FILE * f)
     size_t size = 0;
     char * line = (char *) malloc(sizeof(char) * cap + 1);
 
-    // TODO: remember to handle dos line endings
     char c  = fgetc(f);
+
+    if (c == EOF) {
+        free(line);
+        return NULL;
+    }
+
     while (c != EOF && c != '\n') {
         line[size] = c;
         ++size;
@@ -142,37 +164,115 @@ char * read_line(FILE * f)
     return line;
 }
 
-static
-void read_file(const char * path, FILE * f, asm_source * code)
+static inline
+void push_token(asm_line * line, const char * str, size_t start, size_t end)
 {
-    asm_line line;
-    asm_line_ctor(&line);
+    char * token = stridup(str, start, end);
+    vector_push_back(&line->tokens, &token);
+}
 
-    rd_state state = RD_SEARCH;
-    unsigned int line_no = 0;
+static
+int read_file(const char * path, FILE * f, asm_source * code)
+{
+    code->name = path;
+
+    unsigned int line_no = 1;
 
     char * raw_line = read_line(f);
-    while (raw_line[0] != '\0') {
-        ++line_no;
-        printf("%4d: %s\n", line_no, raw_line);
+    while (raw_line != NULL) {
+        asm_line line;
+        asm_line_ctor(&line);
+
+        rd_state state = RD_SEARCH;
+        size_t rd_head = 0;
+        size_t s_head = 0;
+        size_t e_head = 0;
+
+        char c = 1;
+        while (c != '\0' && state != RD_IGNORE) {
+            c = raw_line[rd_head];
+            switch (state) {
+            case RD_SEARCH:
+                if (c == ' ' || c == '\t' || c == '\0') {
+                    ++rd_head;
+                } else if (c == '"') {
+                    s_head = rd_head;
+                    ++rd_head;
+                    state = RD_QUOTE;
+                } else if (c == ';') {
+                    state = RD_IGNORE;
+                } else {
+                    s_head = rd_head;
+                    ++rd_head;
+                    state = RD_GRAB;
+                }
+                break;
+            case RD_GRAB:
+                if (c == ' ' || c == '\t' || c == '\0') {
+                    e_head = rd_head - 1;
+                    push_token(&line, raw_line, s_head, e_head);
+                    ++rd_head;
+                    state = RD_SEARCH;
+                } else if (c == ',') {
+                    // comma is special: separates operands, doesn't need spacing
+                    e_head = rd_head - 1;
+                    push_token(&line, raw_line, s_head, e_head);
+                    s_head = rd_head;
+                    e_head = rd_head;
+                    push_token(&line, raw_line, s_head, e_head);
+                    ++rd_head;
+                    state = RD_SEARCH;
+                } else if (c == ';') {
+                    e_head = rd_head - 1;
+                    push_token(&line, raw_line, s_head, e_head);
+                    state = RD_IGNORE;
+                } else {
+                    ++rd_head;
+                }
+                break;
+            case RD_QUOTE:
+                if (c == ' ' || c == '\t') {
+                    e_head = rd_head - 1;
+                    push_token(&line, raw_line, s_head, e_head);
+                    ++rd_head;
+                    state = RD_SEARCH;
+                } else if (c == '"') {
+                    e_head = rd_head;
+                    push_token(&line, raw_line, s_head, e_head);
+                    ++rd_head;
+                    state = RD_SEARCH;
+                } else if (c == '\0') {
+                    msg(M_AS, M_ERROR,
+                         ANSI_BOLD ANSI_F_BWHT "%s:%d" ANSI_RESET ": "
+                         "Unterminated string",
+                         path, line_no);
+                    show_line_error(raw_line, rd_head);
+                    return 1;
+                } else {
+                    ++rd_head;
+                }
+                break;
+            case RD_IGNORE:
+                break;
+            }
+        }
+
+        // done with this line: store it in the source
+        if (vector_size(&line.tokens) > 0) {
+            // keep the raw, read-in line for printing
+            line.raw = raw_line;
+            // code->lines manages the line now
+            vector_push_back(&code->lines, &line);
+        } else {
+            asm_line_dtor(&line);
+            free(raw_line);
+        }
 
         raw_line = read_line(f);
+        ++line_no;
     }
 
-    /*
-    while (1) {
-        switch (state) {
-        case RD_SEARCH:
-            break;
-        case RD_GRAB:
-            break;
-        case RD_QUOTE:
-            break;
-        case RD_IGNORE:
-            break;
-        }
-    }
-    */
+    return 0;
 }
 
 int asm_patt(const as_params * params, const vector(char *) * file_paths, const vector(FILE *) * files)
@@ -200,12 +300,25 @@ int asm_patt(const as_params * params, const vector(char *) * file_paths, const 
         }
 
         // TODO REMOVE; DEBUG PURPOSES
+        for (int i = 0; i < vector_size(&prog->src.lines); ++i) {
+            asm_line * line = vector_getp(&prog->src.lines, i);
+
+            printf("%4d: ", i);
+            for (int j = 0; j < vector_size(&line->tokens); ++j) {
+                printf("%s ", *(char **) vector_getp(&line->tokens, j));
+            }
+            printf("\n");
+        }
     }
 
 
     // clean up the programs
-    for (program * curr = header.next; curr != NULL; curr = curr->next) {
+    program * curr = header.next;
+    program * next = NULL;
+    while (curr != NULL) {
+        next = curr->next;
         program_delete(curr);
+        curr = next;
     }
     return ret;
 }
