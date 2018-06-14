@@ -112,16 +112,27 @@ typedef enum _rd_state
 
 #define TILDE_COUNT 4
 static
-void show_line_error(const char * line, size_t pos)
+void show_line_error(const char * line,
+                     size_t hlight_beg, size_t hlight_end, size_t pos)
 {
-    printf("%s\n", line);
-    if (pos >= TILDE_COUNT) {
+    size_t len = strlen(line);
+
+    for (size_t i = 0; i < hlight_beg; ++i) {
+        fputc(line[i], stdout);
+    }
+    printf(ANSI_F_BMAG);
+    for (size_t i = hlight_beg; i <= hlight_end; ++i) {
+        fputc(line[i], stdout);
+    }
+    printf(ANSI_RESET "%s\n", line + hlight_end + 1);
+
+    if (pos > TILDE_COUNT) {
         for (size_t i = 0; i < pos - 1 - TILDE_COUNT; ++i) {
             fputc(' ', stdout);
         }
     }
     printf(ANSI_BOLD ANSI_F_BWHT);
-    for (size_t i = pos - 1 - TILDE_COUNT; i < pos - 1; ++i) {
+    for (size_t i = (pos > TILDE_COUNT) ? pos - 1 - TILDE_COUNT : 0; i < pos - 1; ++i) {
         fputc('~', stdout);
     }
     printf(ANSI_F_BMAG "^\n" ANSI_RESET);
@@ -246,7 +257,7 @@ int read_file(const char * path, FILE * f, asm_source * code)
                          ANSI_BOLD ANSI_F_BWHT "%s:%d" ANSI_RESET ": "
                          "Unterminated string",
                          path, line_no);
-                    show_line_error(raw_line, rd_head);
+                    show_line_error(raw_line, s_head, rd_head, rd_head);
                     return 1;
                 } else {
                     ++rd_head;
