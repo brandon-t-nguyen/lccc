@@ -77,6 +77,15 @@ int main(int argc, char ** argv)
         exit(AS_RET_NO_INPUT);
     }
 
+    bool ok = true;
+
+    // check validity of options
+    if ((driver_params.iformat == AS_IF_HEX || driver_params.iformat == AS_IF_BIN) &&
+        driver_params.oformat != AS_OF_OBJ) {
+        msg(M_AS, M_ERROR, "Output format must be 'obj' in order to use the 'bin' or 'hex' input formats");
+        ok = false;
+    }
+
     // open the files
     for (size_t i = 0; i < num_files; ++i) {
         const char * path = NULL;
@@ -85,20 +94,25 @@ int main(int argc, char ** argv)
         if (file == NULL) {
             switch (errno) {
             case ENOENT:
-                msg(M_AS, M_FATAL,
+                msg(M_AS, M_ERROR,
                     ANSI_F_BWHT "%s" ANSI_RESET ": No such file or directory",
                     path);
                 break;
             default:
-                msg(M_AS, M_FATAL,
+                msg(M_AS, M_ERROR,
                     ANSI_F_BWHT "%s" ANSI_RESET ": Unable to open file or directory",
                     path);
                 break;
             }
-            exit(AS_RET_BAD_INPUT);
+            ok = false;
         } else {
             vector_push_back(&files, &file);
         }
+    }
+
+    if (!ok) {
+        msg(M_AS, M_FATAL, "Errors caught");
+        exit(AS_RET_BAD_INPUT);
     }
 
     // pass the files to the assembler implementation
