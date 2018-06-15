@@ -30,17 +30,17 @@ const char * msg_level_str(msg_level level)
 {
     switch(level) {
     case M_FATAL:
-        return ANSI_RESET ANSI_F_BRED "fatal error" ANSI_RESET;
+        return ANSI_RESET ANSI_BOLD ANSI_F_BRED "fatal error" ANSI_RESET;
     case M_ERROR:
-        return ANSI_RESET ANSI_F_BRED "error" ANSI_RESET;
+        return ANSI_RESET ANSI_BOLD ANSI_F_BRED "error" ANSI_RESET;
     case M_WARN:
-        return ANSI_RESET ANSI_F_BMAG "warning" ANSI_RESET;
+        return ANSI_RESET ANSI_BOLD ANSI_F_BMAG "warning" ANSI_RESET;
     case M_INFO:
-        return ANSI_RESET ANSI_F_BWHT "info" ANSI_RESET;
+        return ANSI_RESET ANSI_BOLD ANSI_F_BWHT "info" ANSI_RESET;
     case M_DEBUG:
-        return ANSI_RESET ANSI_F_BGRN "debug" ANSI_RESET;
+        return ANSI_RESET ANSI_BOLD ANSI_F_BGRN "debug" ANSI_RESET;
     case M_VERBOSE:
-        return ANSI_RESET ANSI_F_BBLU "verbose" ANSI_RESET;
+        return ANSI_RESET ANSI_BOLD ANSI_F_BBLU "verbose" ANSI_RESET;
     default:
         return "<no level>";
     }
