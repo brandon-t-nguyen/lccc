@@ -248,10 +248,14 @@ int read_file(const char * path, FILE * f, asm_source * code)
                     ++rd_head;
                     state = RD_SEARCH;
                 } else if (c == '"') {
-                    e_head = rd_head;
-                    push_token(&line, raw_line, s_head, e_head);
-                    ++rd_head;
-                    state = RD_SEARCH;
+                    if (raw_line[rd_head-1] != '\\') {
+                        e_head = rd_head;
+                        push_token(&line, raw_line, s_head, e_head);
+                        ++rd_head;
+                        state = RD_SEARCH;
+                    } else {
+                        ++rd_head;
+                    }
                 } else if (c == '\0') {
                     msg(M_AS, M_ERROR,
                          ANSI_BOLD ANSI_F_BWHT "%s:%d" ANSI_RESET ": "
