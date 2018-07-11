@@ -18,6 +18,7 @@ typedef struct _asm_line
 {
     unsigned int number;
     vector(char *) tokens;
+    vector(size_t) token_idxs;
     char * raw;
 } asm_line;
 

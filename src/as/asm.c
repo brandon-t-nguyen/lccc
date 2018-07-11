@@ -11,6 +11,7 @@ void asm_line_ctor(asm_line * line)
 {
     line->number = 0;
     vector_ctor(&line->tokens, sizeof(char *), NULL, btn_free_shim);
+    vector_ctor(&line->token_idxs, sizeof(size_t), NULL, NULL);
     line->raw = NULL;
 }
 

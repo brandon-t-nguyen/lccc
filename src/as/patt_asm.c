@@ -5,11 +5,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 #include <errno.h>
 
 #include <btn/vector.h>
 #include <btn/cstr.h>
+#include <btn/bst.h>
 
 #include "as.h"
 #include "asm.h"
@@ -23,9 +25,16 @@ typedef struct _program
     uint16_t entry;
     vector(uint16_t) data;
 
+    bst symbols;
+
     struct _program * next; // simple linking
 } program;
 
+typedef struct _symbol_val
+{
+    uint16_t addr;
+    asm_line * line;   // for error reporting
+} symbol_val;
 
 static
 program * program_new(void)
@@ -37,6 +46,10 @@ program * program_new(void)
     vector_ctor(&prog->data, sizeof(uint16_t), NULL, NULL);
     prog->next = NULL;
 
+    bst_ctor(&prog->symbols, sizeof(char *), sizeof(symbol_val),
+             btn_free_shim, NULL,
+             strcmp);
+
     return prog;
 }
 
@@ -45,6 +58,7 @@ void program_delete(program * prog)
 {
     asm_source_dtor(&prog->src);
     vector_dtor(&prog->data);
+    bst_dtor(&prog->symbols);
     free(prog);
 }
 
@@ -95,11 +109,281 @@ int insert(program * header, program * p)
     return 0;
 }
 
+#define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
+const char * mnems[] =
+{
+    "add",
+    "and",
+    "not",
+    "lea",
+
+    "ld",
+    "st",
+    "ldr",
+    "str",
+    "ldi",
+    "sti",
+
+    "br",
+    "brn",
+    "brz",
+    "brp",
+    "brnz",
+    "brzp",
+    "brnp",
+    "brnzp",
+
+    "jmp",
+    "jsr",
+    "jsrr",
+    "ret",
+    "rti",
+    "trap",
+
+    ".orig",    // TODO: catch multiple .orig in one file
+    ".end",     // TODO: what happens when you run into .end?
+    ".fill",
+    ".blkw",
+    ".stringz",
+    ".stringp"
+};
+
+#define TILDE_COUNT 4
+static
+void show_line_error(const char * line,
+                     ssize_t hlight_beg, ssize_t hlight_end, ssize_t pos)
+{
+    size_t len = strlen(line);
+
+    if (hlight_beg < 0 && hlight_end < 0) {
+        printf("%s\n", line);
+    } else {
+        for (size_t i = 0; i < hlight_beg; ++i) {
+            fputc(line[i], stdout);
+        }
+        printf(ANSI_F_BMAG);
+        for (size_t i = hlight_beg; i <= hlight_end; ++i) {
+            fputc(line[i], stdout);
+        }
+        printf(ANSI_RESET "%s\n", line + hlight_end + 1);
+    }
+
+    if (pos >= 0) {
+        if (pos > TILDE_COUNT) {
+            for (size_t i = 0; i < pos - 1 - TILDE_COUNT; ++i) {
+                fputc(' ', stdout);
+            }
+        }
+        printf(ANSI_BOLD ANSI_F_BWHT);
+        for (size_t i = (pos > TILDE_COUNT) ? pos - 1 - TILDE_COUNT : 0; i < pos - 1; ++i) {
+            fputc('~', stdout);
+        }
+        printf(ANSI_F_BMAG "^\n" ANSI_RESET);
+    }
+}
+static
+void show_line_token_error(const asm_line * line, size_t idx)
+{
+    size_t token_idx;
+    size_t token_len;
+    char * token;
+    vector_get(&line->tokens, idx, &token);
+    vector_get(&line->token_idxs, idx, &token_idx);
+    token_len = strlen(token);
+
+    show_line_error(line->raw, token_idx, token_idx + token_len - 1, token_idx);
+}
+
+static
+bool is_mnem(const char * str)
+{
+    for (int i = 0; i < ARRAY_LEN(mnems); ++i) {
+        if (!strcmp_caseless(mnems[i], str)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// returns false if successful
+bool parse_num(const char * str, int * val)
+{
+    int cnt = 0;
+    cnt = sscanf(str, "x%X", val); if (cnt > 0) return true;
+    cnt = sscanf(str, "0x%X", val); if (cnt > 0) return true;
+    cnt = sscanf(str, "x%x", val); if (cnt > 0) return true;
+    cnt = sscanf(str, "0x%x", val); if (cnt > 0) return true;
+    cnt = sscanf(str, "#%d", val); if (cnt > 0) return true;
+    return false;
+}
+
+static
+bool add_symbol(program * p, const char * symbol, uint16_t addr, asm_line * line)
+{
+    symbol_val val;
+    val.addr = addr;
+    val.line = line;
+
+    return bst_insert(&p->symbols, strdup(symbol), &val);
+}
+
+// idx is the index of the mnemonic
+static
+int get_code_size(program * p, asm_line * line, size_t idx)
+{
+    vector(char *) * tokens = &line->tokens;
+    char * mnem;
+    char * arg;
+    size_t num_tok = vector_size(tokens);
+    vector_get(tokens, idx, &mnem);
+
+    if (!strcmp_caseless(".blkw", mnem)) {
+        if (idx < num_tok - 1) {
+            vector_get(tokens, idx + 1, &arg);
+            int words;
+            if (parse_num(arg, &words)) {
+                return words;
+            } else {
+                msg(M_AS, M_ERROR,
+                    ANSI_BOLD ANSI_F_BWHT "%s:%d" ANSI_RESET ": "
+                    "Unable to parse number of words for .BLKW to reserve",
+                    p->src.name, line->number);
+                show_line_token_error(line, idx + 1);
+                return -1;
+            }
+        } else {
+            goto catch_tokens;
+        }
+    } else if (!strcmp_caseless(".stringz", mnem)) {
+        if (idx < num_tok - 1) {
+            vector_get(tokens, idx + 1, &arg);
+            int len = strlen(arg);
+            return len <= 2 ? -1 : len - 2 + 1; // subtract 2 for quotes, + 1 for NULL
+        } else {
+            goto catch_tokens;
+        }
+    } else if (!strcmp_caseless(".stringp", mnem)) {
+        if (idx < num_tok - 1) {
+            vector_get(tokens, idx + 1, &arg);
+            int len = strlen(arg);
+            return len <= 2 ? -1 : ((len - 2) / 2) + 1;
+        } else {
+            goto catch_tokens;
+        }
+    } else {
+        return 1;
+    }
+
+catch_tokens:
+    msg(M_AS, M_ERROR,
+        ANSI_BOLD ANSI_F_BWHT "%s:%d" ANSI_RESET ": "
+        "Expected additional operand",
+        p->src.name, line->number);
+        show_line_token_error(line, idx + 1);
+    return -1;
+}
+
+// - generate the symbol table
+// - make sure it starts with .orig
+// - make sure enough operands
+static
+int pass_one(program * p)
+{
+    size_t idx = 0;
+
+    // first meaningful line needs to be .orig
+    asm_source * src = &p->src;
+    asm_line * line = vector_getp(&src->lines, 0);
+    char * token;
+    vector_get(&line->tokens, 0, &token);
+    if (strcmp_caseless(".orig", token)) {
+        // nope
+        msg(M_AS, M_ERROR,
+            ANSI_BOLD ANSI_F_BWHT "%s:%d" ANSI_RESET ": "
+            "First meaningful line must be a .ORIG directive",
+            p->src.name, line->number);
+        return 1;
+    }
+
+    int val;
+    uint16_t addr;
+    // extract the entry addr and set it
+    if (vector_size(&line->tokens) < 2) {
+        msg(M_AS, M_ERROR,
+            ANSI_BOLD ANSI_F_BWHT "%s:%d" ANSI_RESET ": "
+            "Expected start address for the .ORIG directive",
+            p->src.name, line->number);
+        show_line_error(line->raw, -1, -1, -1);
+    }
+
+    vector_get(&line->tokens, 1, &token);
+    if (!parse_num(token, &val)) {
+        msg(M_AS, M_ERROR,
+            ANSI_BOLD ANSI_F_BWHT "%s:%d" ANSI_RESET ": "
+            "Unable to parse entry address for the .ORIG directive",
+            p->src.name, line->number);
+        show_line_token_error(line, 1);
+        return 1;
+    }
+    addr = (uint16_t) (val & 0xFFFF);
+    p->entry = addr;
+
+    size_t num_lines = vector_size(&p->src.lines);
+    for (size_t i = 1; i < num_lines; ++i) {
+        line = vector_getp(&src->lines, i);
+        int inc_addr = 0;
+        if (vector_size(&line->tokens) == 1) {
+            vector_get(&line->tokens, 0, &token);
+            if (!is_mnem(token)) {
+                add_symbol(p, token, addr, line);
+            } else {
+                if (!strcmp_caseless(".end", token))
+                    break;
+
+                inc_addr = get_code_size(p, line, 0);
+            }
+        } else {
+            size_t idx = 0;
+            vector_get(&line->tokens, 0, &token);
+            if (!is_mnem(token)) {
+                add_symbol(p, token, addr, line);
+                ++idx;
+            }
+
+            vector_get(&line->tokens, idx, &token);
+            if (!strcmp_caseless(".end", token))
+                break;
+
+            inc_addr = get_code_size(p, line, idx);
+        }
+
+        if (inc_addr < 0) {
+            // TODO: error
+            return 1;
+        }
+
+        addr += inc_addr;
+    }
+
+    return 0;
+}
+
+static
+int pass_two(program * p)
+{
+    return 0;
+}
+
 static
 int assemble(program * p)
 {
-    // TODO
-    return 0;
+    int ret = 0;
+    ret = pass_one(p);
+    if (ret != 0) {
+        return ret;
+    }
+    ret = pass_two(p);
+    return ret;
 }
 
 typedef enum _rd_state
@@ -109,34 +393,6 @@ typedef enum _rd_state
     RD_QUOTE,       // grabbing quotes
     RD_IGNORE,      // ignores rest of line
 } rd_state;
-
-#define TILDE_COUNT 4
-static
-void show_line_error(const char * line,
-                     size_t hlight_beg, size_t hlight_end, size_t pos)
-{
-    size_t len = strlen(line);
-
-    for (size_t i = 0; i < hlight_beg; ++i) {
-        fputc(line[i], stdout);
-    }
-    printf(ANSI_F_BMAG);
-    for (size_t i = hlight_beg; i <= hlight_end; ++i) {
-        fputc(line[i], stdout);
-    }
-    printf(ANSI_RESET "%s\n", line + hlight_end + 1);
-
-    if (pos > TILDE_COUNT) {
-        for (size_t i = 0; i < pos - 1 - TILDE_COUNT; ++i) {
-            fputc(' ', stdout);
-        }
-    }
-    printf(ANSI_BOLD ANSI_F_BWHT);
-    for (size_t i = (pos > TILDE_COUNT) ? pos - 1 - TILDE_COUNT : 0; i < pos - 1; ++i) {
-        fputc('~', stdout);
-    }
-    printf(ANSI_F_BMAG "^\n" ANSI_RESET);
-}
 
 static
 char * read_line(FILE * f)
@@ -180,6 +436,7 @@ void push_token(asm_line * line, const char * str, size_t start, size_t end)
 {
     char * token = stridup(str, start, end);
     vector_push_back(&line->tokens, &token);
+    vector_push_back(&line->token_idxs, &start);
 }
 
 static
