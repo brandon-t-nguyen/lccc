@@ -23,6 +23,7 @@ typedef struct _program
     asm_source src;
 
     uint16_t entry;
+    vector(asm_line *) code_lines;  // lines that contain instructions
     vector(uint16_t) data;
 
     bst symbols;
@@ -44,6 +45,7 @@ program * program_new(void)
     asm_source_ctor(&prog->src);
     prog->entry = 0xFFFF;
     vector_ctor(&prog->data, sizeof(uint16_t), NULL, NULL);
+    vector_ctor(&prog->code_lines, sizeof(asm_line *), NULL, NULL);
     prog->next = NULL;
 
     bst_ctor(&prog->symbols, sizeof(char *), sizeof(symbol_val),
@@ -58,6 +60,7 @@ void program_delete(program * prog)
 {
     asm_source_dtor(&prog->src);
     vector_dtor(&prog->data);
+    vector_dtor(&prog->code_lines);
     bst_dtor(&prog->symbols);
     free(prog);
 }
@@ -224,7 +227,8 @@ bool add_symbol(program * p, const char * symbol, uint16_t addr, asm_line * line
     val.addr = addr;
     val.line = line;
 
-    return bst_insert(&p->symbols, strdup(symbol), &val);
+    char * sym = strdup(symbol);
+    return bst_insert(&p->symbols, &sym, &val);
 }
 
 // idx is the index of the mnemonic
@@ -283,6 +287,7 @@ catch_tokens:
     return -1;
 }
 
+// TODO: redo; put everything into a compact form while it's being looked through
 // - generate the symbol table
 // - make sure it starts with .orig
 // - make sure enough operands
@@ -355,6 +360,8 @@ int pass_one(program * p)
                 break;
 
             inc_addr = get_code_size(p, line, idx);
+
+            vector_push_back(&p->code_lines, &line);
         }
 
         if (inc_addr < 0) {
@@ -369,8 +376,73 @@ int pass_one(program * p)
 }
 
 static
+int asm_add_and(program * p, asm_line * line, uint16_t addr, size_t idx)
+{
+    uint16_t inst = 0;
+}
+
+static
+int assemble_line(program * p, asm_line * line, uint16_t addr)
+{
+    size_t idx = 0;
+    size_t num_tok = vector_size(&line->tokens);
+    char * tok;
+    vector_get(&line->tokens, idx, &tok);
+
+    // check if it's mnemonic; if not, check the next token
+    if (!is_mnem(tok)) {
+        if (num_tok == 1)
+            return 0;
+        ++idx;
+    }
+
+    vector_get(&line->tokens, idx, &tok);
+    // now we hopefully have a mnemonic
+    // TODO: better delineation of what each pass does
+
+    if (!is_mnem(tok)) {
+        msg(M_AS, M_ERROR,
+            ANSI_BOLD ANSI_F_BWHT "%s:%d" ANSI_RESET ": "
+            "Unrecognized opcode/directive: %s",
+            p->src.name, line->number, tok);
+        size_t tok_idx;
+        show_line_token_error(line, idx);
+        return 1;
+    }
+
+    // handle each case
+    int ret;
+    if (!strcmp_caseless("add", tok) || !strcmp_caseless("and", tok)) {
+        ret = asm_add_and(p, line, addr, idx);
+    } else if (!strcmp_caseless("br", tok) || !strcmp_caseless("brnzp", tok) || !strcmp_caseless("nop", tok),
+               !strcmp_caseless("brn", tok) || !strcmp_caseless("brz", tok) || !strcmp_caseless("brp", tok),
+               !strcmp_caseless("brnz", tok) || !strcmp_caseless("brzp", tok) || !strcmp_caseless("brnp", tok)
+               ) {
+
+    }
+
+    return ret;
+}
+
+// assemble and emit code
+static
 int pass_two(program * p)
 {
+    uint16_t addr;
+
+    vector(asm_lines *) * lines = &p->code_lines;
+    size_t num_lines = vector_size(lines);
+    for (size_t i = 0; i < num_lines; ++i)
+    {
+        addr = p->entry + vector_size(&p->data); // we know address based on how much code emitted
+
+        asm_line * line;
+        vector_get(lines, i, &line);
+        int ret = assemble_line(p, line, addr);
+        if (ret)
+            return ret;
+    }
+
     return 0;
 }
 
@@ -533,6 +605,7 @@ int read_file(const char * path, FILE * f, asm_source * code)
         if (vector_size(&line.tokens) > 0) {
             // keep the raw, read-in line for printing
             line.raw = raw_line;
+            line.number = line_no;
             // code->lines manages the line now
             vector_push_back(&code->lines, &line);
         } else {
@@ -572,6 +645,7 @@ int asm_patt(const as_params * params, const vector(char *) * file_paths, const 
         }
 
         // TODO REMOVE; DEBUG PURPOSES
+        /*
         for (int i = 0; i < vector_size(&prog->src.lines); ++i) {
             asm_line * line = vector_getp(&prog->src.lines, i);
 
@@ -581,6 +655,7 @@ int asm_patt(const as_params * params, const vector(char *) * file_paths, const 
             }
             printf("\n");
         }
+        */
     }
 
 
