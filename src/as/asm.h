@@ -118,6 +118,8 @@ typedef struct _asm_op
 {
     asm_mnem mnem;
     vector(asm_operand) operands;
+
+    const asm_line * line;  // debugging purposes line
 } asm_op;
 void asm_op_ctor(asm_op * op);
 void asm_op_dtor(asm_op * op);

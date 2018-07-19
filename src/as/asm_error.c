@@ -84,4 +84,6 @@ void asm_msg_line_token(const asm_source * src,
     asm_line_token_error(line, token);
 
     va_end(ap);
+
+    free(buffer);
 }

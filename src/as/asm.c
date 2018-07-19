@@ -76,6 +76,13 @@ void asm_program_ctor(asm_program * prog)
     vector_ctor(&prog->sections, sizeof(asm_section), NULL, asm_section_dtor);
 }
 
+void asm_program_dtor(asm_program * prog)
+{
+    asm_source_dtor(&prog->src);
+    vector_dtor(&prog->ops);
+    vector_dtor(&prog->sections);
+}
+
 static
 void fclose_shim(void * arg)
 {
@@ -87,7 +94,7 @@ void asm_context_ctor(asm_context * context)
 {
     vector_ctor(&context->file_paths, sizeof(const char *), NULL, NULL);
     vector_ctor(&context->files, sizeof(FILE *), NULL, fclose_shim);
-    vector_ctor(&context->progs, sizeof(asm_program), NULL, NULL);
+    vector_ctor(&context->progs, sizeof(asm_program), NULL, asm_program_dtor);
 }
 
 void asm_context_dtor(asm_context * context)

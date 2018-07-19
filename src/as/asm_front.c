@@ -142,6 +142,7 @@ fail:
     // TODO: predict if token 0 is intended to be a label?
     token = TOKEN(line,0);
     asm_msg_line_token(src, line, token, M_ERROR, "Unknown opcode/directive " ANSI_F_BMAG "'%s'" ANSI_RESET, token->str);
+    asm_op_dtor(&op);
     return AS_RET_BAD_INPUT;
 }
 
@@ -163,11 +164,11 @@ as_ret parse_lines(asm_context * context, asm_program * prog)
 as_ret asm_front(asm_context * context)
 {
     as_ret ret = AS_RET_OK;
+    asm_program prog;
 
     // go through each file, read and tokenize it, and produce assembler ops from it
     int num_files = (int) vector_size(&context->files);
     for (int i = 0; i <  num_files && ret == AS_RET_OK; ++i) {
-        asm_program prog;
         asm_program_ctor(&prog);
 
         // tokenize the file
@@ -180,21 +181,13 @@ as_ret asm_front(asm_context * context)
         // go through each line and process it
         ret = parse_lines(context, &prog);
         if (ret != AS_RET_OK)
-            break;
+            goto fail;
 
-        // TODO REMOVE; DEBUG PURPOSES
-        /*
-        for (int i = 0; i < vector_size(&prog.src.lines); ++i) {
-            asm_line * line = vector_getp(&prog.src.lines, i);
-
-            printf("%4d: ", i);
-            for (int j = 0; j < vector_size(&line->tokens); ++j) {
-                printf("%s ", *(char **) vector_getp(&line->tokens, j));
-            }
-            printf("\n");
-        }
-        */
+        vector_push_back(&context->progs, &prog);
     }
 
+    return ret;
+fail:
+    asm_program_dtor(&prog);
     return ret;
 }
