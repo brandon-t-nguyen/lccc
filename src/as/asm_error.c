@@ -14,8 +14,6 @@
 #include "asm.h"
 #include "print.h"
 
-#define TILDE_COUNT 4
-
 void asm_string_error(const char * line,
                       ssize_t hlight_beg, ssize_t hlight_end, ssize_t pos)
 {
@@ -37,18 +35,16 @@ void asm_string_error(const char * line,
     if (pos == -1)
         return;
 
-    if (pos > 0) {
-        if (pos > TILDE_COUNT) {
-            for (size_t i = 0; i < pos - 1 - TILDE_COUNT; ++i) {
-                fputc(' ', stdout);
-            }
-        }
-        printf(ANSI_BOLD ANSI_F_BWHT);
-        for (size_t i = (pos > TILDE_COUNT) ? pos - 1 - TILDE_COUNT : 0; i < pos; ++i) {
-            fputc('~', stdout);
-        }
-    }
-    printf(ANSI_F_BMAG "^\n" ANSI_RESET);
+
+    for (size_t i = 0; i < pos; ++i)
+        fputc(' ', stdout);
+
+    printf(ANSI_F_BMAG "^" ANSI_RESET);
+
+    printf(ANSI_BOLD ANSI_F_BWHT);
+    for (size_t i = 0; i < hlight_end - hlight_beg; ++i)
+        fputc('~', stdout);
+    printf(ANSI_RESET "\n"); // TODO: OS agnostic line separator macro?
 }
 
 void asm_line_error(const asm_line * line, ssize_t hlight_beg, ssize_t hlight_end, ssize_t pos)
