@@ -48,7 +48,6 @@ const char * msg_level_str(msg_level level)
 
 #define BUF_SIZE 1024
 
-static
 void vfmsg(FILE * file, const char * src, msg_level level, const char * fmt,
            va_list ap)
 {

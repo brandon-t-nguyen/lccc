@@ -38,6 +38,12 @@ void msg(const char * src, msg_level level, const char * fmt, ...);
  */
 void fmsg(FILE * file, const char * src, msg_level level, const char * fmt, ...);
 
+/**
+ * Full control msg
+ */
+void vfmsg(FILE * file, const char * src, msg_level level, const char * fmt,
+           va_list ap);
+
 #ifdef __cplusplus
 }
 #endif

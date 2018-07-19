@@ -8,6 +8,7 @@
 #include <btn/cstr.h>
 
 #include "as.h"
+#include "asm.h"
 #include "print.h"
 #include "option.h"
 
@@ -61,17 +62,16 @@ void print_help(void)
 
 int main(int argc, char ** argv)
 {
+    // setup the context
+    asm_context context;
+    asm_context_ctor(&context);
+
     // construct the params
-    as_params driver_params = DEFAULT_PARAMS;
-    vector(const char *) file_names;
-    vector(FILE *) files;
-    vector_ctor(&file_names, sizeof(const char *), NULL, NULL);
-    vector_ctor(&files, sizeof(FILE *), NULL, NULL);
-
+    context.params = DEFAULT_PARAMS;
     parse_options(M_AS, as_options, as_num_options,
-                  &driver_params, &file_names, argc, argv);
+                  &context.params, &context.file_paths, argc, argv);
 
-    size_t num_files = vector_size(&file_names);
+    size_t num_files = vector_size(&context.file_paths);
     if (num_files == 0) {
         msg(M_AS, M_FATAL, "No input files");
         exit(AS_RET_NO_INPUT);
@@ -80,8 +80,8 @@ int main(int argc, char ** argv)
     bool ok = true;
 
     // check validity of options
-    if ((driver_params.iformat == AS_IF_HEX || driver_params.iformat == AS_IF_BIN) &&
-        driver_params.oformat != AS_OF_OBJ) {
+    if ((context.params.iformat == AS_IF_HEX || context.params.iformat == AS_IF_BIN) &&
+        context.params.oformat != AS_OF_OBJ) {
         msg(M_AS, M_ERROR, "Output format must be 'obj' in order to use the 'bin' or 'hex' input formats");
         ok = false;
     }
@@ -89,7 +89,7 @@ int main(int argc, char ** argv)
     // open the files
     for (size_t i = 0; i < num_files; ++i) {
         const char * path = NULL;
-        vector_get(&file_names, i, &path);
+        vector_get(&context.file_paths, i, &path);
         FILE * file = fopen(path, "r");
         if (file == NULL) {
             switch (errno) {
@@ -106,7 +106,7 @@ int main(int argc, char ** argv)
             }
             ok = false;
         } else {
-            vector_push_back(&files, &file);
+            vector_push_back(&context.files, &file);
         }
     }
 
@@ -115,16 +115,13 @@ int main(int argc, char ** argv)
         exit(AS_RET_BAD_INPUT);
     }
 
-    // pass the files to the assembler implementation
-    asm_patt(&driver_params, &file_names, &files);
+    as_ret ret;
+    // frontend
+    ret = asm_front(&context);
 
-    // cleanup
-    for (size_t i = 0; i < num_files; ++i) {
-        FILE * file;
-        vector_get(&files, i, &file);
-        fclose(file);
-    }
+    // TODO: backend
 
-    vector_dtor(&files);
-    vector_dtor(&file_names);
+    asm_context_dtor(&context);
+
+    return ret;
 }
