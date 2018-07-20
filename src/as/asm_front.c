@@ -19,9 +19,9 @@ typedef struct match_op
     const char * str;
     // provide it an already constructed op
     // if label is true, then tokens[0] is a label: use tokens[1]
-    as_ret (* func)(asm_op * op, const asm_context * context, const asm_source * src, const asm_line * line, bool label);
+    bool (* func)(asm_op * op, const asm_context * context, const asm_source * src, const asm_line * line, bool label);
 } match_op;
-#define MATCH_OP(_name) static as_ret _name(asm_op * op, const asm_context * context, const asm_source * src,  const asm_line * line, bool label)
+#define MATCH_OP(_name) static bool _name(asm_op * op, const asm_context * context, const asm_source * src,  const asm_line * line, bool label)
 
 
 typedef enum parse_type
@@ -118,31 +118,31 @@ asm_optype parse_operand(asm_operand * oper,
     if (it_is_end(&it)) {\
         asm_msg_line_token(src, line, &tok, M_ERROR,\
                            "Expected more operands");\
-        return AS_RET_BAD_INPUT;\
+        return false;\
     }\
     it_read(&it, &tok);
 
 #define TOK_OPER_PARSE()\
     if (parse_operand(&oper, src, line, &tok, 0, false) == OPERAND_INV)\
-        return AS_RET_BAD_INPUT;
+        return false;
 
 // parse with bit isolation in imm
 #define TOK_OPER_PARSE_ISO(_bits, _signed)\
     if (parse_operand(&oper, src, line, &tok, _bits, _signed) == OPERAND_INV)\
-        return AS_RET_BAD_INPUT;
+        return false;
 
 #define TOK_OPER_ASSERT_REG()\
     if (oper.type != OPERAND_REG) {\
         asm_msg_line_token(src, line, &tok, M_ERROR,\
                            "Expected register operand");\
-        return AS_RET_BAD_INPUT;\
+        return false;\
     }
 
 #define TOK_OPER_ASSERT_IMM()\
     if (oper.type != OPERAND_IMM) {\
         asm_msg_line_token(src, line, &tok, M_ERROR,\
                            "Expected immediate/offset operand");\
-        return AS_RET_BAD_INPUT;\
+        return false;\
     }
 
 #define TOK_OPER_ASSERT_IMM_BOUNDS(hi, lo)\
@@ -150,7 +150,7 @@ asm_optype parse_operand(asm_operand * oper,
         (oper.data.imm > hi || oper.data.imm < lo)) {\
         asm_msg_line_token(src, line, &tok, M_ERROR,\
                            "Immediate/offset value must be between %d and %d inclusive", lo, hi);\
-        return AS_RET_BAD_INPUT;\
+        return false;\
     }
 
 #define TOK_OPER_PUSH()\
@@ -160,7 +160,7 @@ asm_optype parse_operand(asm_operand * oper,
     if (strcmp(",", tok.str)) {\
         asm_msg_line_token(src, line, &tok, M_ERROR,\
                            "Expected a comma to separate operands");\
-        return AS_RET_BAD_INPUT;\
+        return false;\
     }
 
 #define TOK_ASSERT_DONE()\
@@ -169,10 +169,10 @@ asm_optype parse_operand(asm_operand * oper,
         it_read(&it, &tok);\
         asm_msg_line_token(src, line, &tok, M_ERROR,\
                            "More tokens than expected");\
-        return AS_RET_BAD_INPUT;\
+        return false;\
     }
 
-
+// ALU
 MATCH_OP(parseop_add_and)
 {
     TOK_IT_INIT();
@@ -191,12 +191,12 @@ MATCH_OP(parseop_add_and)
     if (oper.type != OPERAND_REG && oper.type != OPERAND_IMM) {
         asm_msg_line_token(src, line, &tok, M_ERROR,
                            "Expected a register or immediate operand");
-        return AS_RET_BAD_INPUT;
+        return false;
     }
-    TOK_OPER_ASSERT_IMM_BOUNDS(15, -16);
+    TOK_OPER_ASSERT_IMM_BOUNDS(15, -16); TOK_OPER_PUSH();
 
     TOK_ASSERT_DONE();
-    return AS_RET_OK;
+    return true;
 }
 
 MATCH_OP(parseop_not)
@@ -208,9 +208,40 @@ MATCH_OP(parseop_not)
     TOK_IT_NEXT(); TOK_OPER_PARSE(); TOK_OPER_ASSERT_REG(); TOK_OPER_PUSH();
 
     TOK_ASSERT_DONE();
-    return AS_RET_OK;
+    return true;
 }
 
+// load/store
+MATCH_OP(parseop_mem_offset)
+{
+    TOK_IT_INIT();
+
+    if (!strcmp_caseless("ld", tok.str))
+        op->asop = OP_LD;
+    else if (!strcmp_caseless("ldi", tok.str))
+        op->asop = OP_LDI;
+    else if (!strcmp_caseless("st", tok.str))
+        op->asop = OP_ST;
+    else if (!strcmp_caseless("sti", tok.str))
+        op->asop = OP_STI;
+    else
+        op->asop = OP_LEA;
+
+    TOK_IT_NEXT(); TOK_OPER_PARSE(); TOK_OPER_ASSERT_REG(); TOK_OPER_PUSH();
+    TOK_IT_NEXT(); TOK_ASSERT_COMMA();
+    TOK_IT_NEXT(); TOK_OPER_PARSE_ISO(9, true);
+    if (oper.type != OPERAND_IMM && oper.type != OPERAND_STR) {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "Expected 9-bit offset or symbol/label");
+        return false;
+    }
+    TOK_OPER_ASSERT_IMM_BOUNDS(255, -256); TOK_OPER_PUSH();
+
+    TOK_ASSERT_DONE();
+    return true;
+}
+
+// directives
 MATCH_OP(parseop_orig)
 {
     TOK_IT_INIT();
@@ -222,11 +253,11 @@ MATCH_OP(parseop_orig)
     if (oper.type != OPERAND_IMM) {
         asm_msg_line_token(src, line, &tok, M_ERROR,
                            "Operand is not a valid address");
-        return AS_RET_BAD_INPUT;
+        return false;
     }
 
     TOK_ASSERT_DONE();
-    return AS_RET_OK;
+    return true;
 }
 
 const match_op patt_ops[] =
@@ -235,6 +266,12 @@ const match_op patt_ops[] =
     {"add", parseop_add_and},
     {"and", parseop_add_and},
     {"not", parseop_not},
+
+    {"lea", parseop_mem_offset},
+    {"ld", parseop_mem_offset},
+    {"ldi", parseop_mem_offset},
+    {"st", parseop_mem_offset},
+    {"sti", parseop_mem_offset},
 
     // directives
     {".orig", parseop_orig},
@@ -250,7 +287,7 @@ const match_op lccc_ops[] =
     for (size_t i = 0; i < ARRAY_LEN(_ops); ++i) {\
         if (!strcmp_caseless(_ops[i].str, str)) {\
             ret = _ops[i].func(&op, context, src, line, false);\
-            if (ret == AS_RET_OK)\
+            if (ret)\
                 vector_push_back(&prog->ops, &op);\
             else\
                 asm_op_dtor(&op);\
@@ -259,7 +296,7 @@ const match_op lccc_ops[] =
     }
 
 static
-as_ret parse_line(asm_context * context, asm_program * prog, const asm_line * line)
+bool parse_line(asm_context * context, asm_program * prog, const asm_line * line)
 {
     size_t num_tokens = NUM_TOKENS(line);
     bool label = false;
@@ -282,7 +319,7 @@ as_ret parse_line(asm_context * context, asm_program * prog, const asm_line * li
     label = true;
     if (num_tokens == 1) {
         // if only one token, it's probably a symbol declaration
-        return AS_RET_OK;
+        return true;
     }
 
     token = TOKEN(line, 1);
@@ -295,7 +332,7 @@ fail:
     token = TOKEN(line,0);
     asm_msg_line_token(src, line, token, M_ERROR, "unknown opcode/directive " ANSI_F_BMAG "'%s'" ANSI_RESET, token->str);
     asm_op_dtor(&op);
-    return AS_RET_BAD_INPUT;
+    return false;
 }
 
 int parse_lines(asm_context * context, asm_program * prog)
@@ -308,7 +345,7 @@ int parse_lines(asm_context * context, asm_program * prog)
     while (!it_is_end(&line_it)) {
         line = it_ptr(&line_it);
 
-        if (parse_line(context, prog, line) != AS_RET_OK)
+        if (parse_line(context, prog, line))
             ++error_count;
         it_next(&line_it, 1);
     }
