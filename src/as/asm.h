@@ -60,9 +60,11 @@ typedef enum _asm_asop
     OP_STR,
     OP_STI,
     OP_BR,
+    OP_JMP,
     OP_JSR,
     OP_JSRR,
     OP_TRAP,
+    OP_RTI,
 
     // directives
     OP_ORIG,

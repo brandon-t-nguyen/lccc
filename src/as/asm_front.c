@@ -266,6 +266,110 @@ MATCH_OP(parseop_mem_boffset)
     return true;
 }
 
+// control flow
+MATCH_OP(parseop_br)
+{
+    TOK_IT_INIT();
+
+    op->asop = OP_BR;
+
+    // get condition codes
+    oper.type = OPERAND_COND;
+    if (!strcmp_caseless("br", tok.str)) {
+        oper.data.cond.n = 1; oper.data.cond.z = 1; oper.data.cond.p = 1;
+    }
+    else {
+        oper.data.cond.n = 0; oper.data.cond.z = 0; oper.data.cond.p = 0;
+    }
+
+    TOK_IT_NEXT(); TOK_OPER_PARSE_ISO(9, true);
+    if (oper.type != OPERAND_IMM && oper.type != OPERAND_STR) {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "Expected 9-bit offset or symbol/label");
+        return false;
+    }
+    TOK_OPER_ASSERT_IMM_BOUNDS(255, -256); TOK_OPER_PUSH();
+
+    TOK_ASSERT_DONE();
+    return true;
+}
+
+MATCH_OP(parseop_jmp_jsrr)
+{
+    TOK_IT_INIT();
+
+    if (!strcmp_caseless("jmp", tok.str))
+        op->asop = OP_JMP;
+    else
+        op->asop = OP_JSRR;
+
+    TOK_IT_NEXT(); TOK_OPER_PARSE(); TOK_OPER_ASSERT_REG(); TOK_OPER_PUSH();
+    TOK_ASSERT_DONE();
+    return true;
+}
+
+MATCH_OP(parseop_ret)
+{
+    TOK_IT_INIT();
+    op->asop = OP_JMP;
+    oper.type = OPERAND_REG;
+    oper.data.reg = 7;
+    TOK_OPER_PUSH();
+    TOK_ASSERT_DONE();
+    return true;
+}
+
+MATCH_OP(parseop_jsr)
+{
+    TOK_IT_INIT();
+
+    op->asop = OP_JSR;
+
+    TOK_IT_NEXT(); TOK_OPER_PARSE_ISO(11, true);
+    if (oper.type != OPERAND_IMM && oper.type != OPERAND_STR) {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "Expected 11-bit offset or symbol/label");
+        return false;
+    }
+    TOK_OPER_ASSERT_IMM_BOUNDS(1023, -1024); TOK_OPER_PUSH();
+
+    TOK_ASSERT_DONE();
+    return true;
+}
+
+MATCH_OP(parseop_trap)
+{
+    TOK_IT_INIT();
+
+    op->asop = OP_ORIG;
+
+    TOK_IT_NEXT();
+    TOK_OPER_PARSE();
+    if (oper.type != OPERAND_IMM) {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "Operand is not a valid 8-bit trap vector");
+        return false;
+    }
+
+    if (oper.data.imm < 0 || oper.data.imm > 255) {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "Operand exceeds the 8-bit trap vector range of 0 to 255");
+        return false;
+    }
+    TOK_OPER_PUSH();
+
+    TOK_ASSERT_DONE();
+    return true;
+}
+
+MATCH_OP(parseop_rti)
+{
+    TOK_IT_INIT();
+    op->asop = OP_RTI;
+    TOK_ASSERT_DONE();
+    return true;
+}
+
 // directives
 MATCH_OP(parseop_orig)
 {
@@ -280,6 +384,41 @@ MATCH_OP(parseop_orig)
                            "Operand is not a valid address");
         return false;
     }
+
+    TOK_ASSERT_DONE();
+    return true;
+}
+
+MATCH_OP(parseop_end)
+{
+    TOK_IT_INIT();
+    op->asop = OP_END;
+    TOK_ASSERT_DONE();
+    return true;
+}
+
+MATCH_OP(parseop_fill)
+{
+    TOK_IT_INIT();
+
+    op->asop = OP_FILL;
+
+    TOK_IT_NEXT();
+    TOK_OPER_PARSE_ISO(16, true);
+    if (oper.type != OPERAND_IMM && oper.type != OPERAND_STR) {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "Operand is not a valid 16-bit constant or a symbol/label");
+        return false;
+    }
+
+    if (oper.type == OPERAND_IMM) {
+        if ( (oper.data.imm < 0 && oper.data.imm < -0x8000) ||
+             (oper.data.imm > 0 && (oper.data.imm >> 16) != 0)) {
+            asm_msg_line_token(src, line, &tok, M_ERROR,
+                               "Constant exceeds 16-bits");
+        }
+    }
+    TOK_OPER_PUSH();
 
     TOK_ASSERT_DONE();
     return true;
@@ -300,8 +439,28 @@ const match_op patt_ops[] =
     {"sti", parseop_mem_offset},
     {"str", parseop_mem_boffset},
 
+    {"br", parseop_br},
+    {"brn", parseop_br},
+    {"brz", parseop_br},
+    {"brp", parseop_br},
+    {"brnz", parseop_br},
+    {"brzp", parseop_br},
+    {"brnp", parseop_br},
+    {"brnzp", parseop_br},
+
+    {"jmp", parseop_jmp_jsrr},
+    {"ret", parseop_ret},
+
+    {"jsr", parseop_jsr},
+    {"jsrr", parseop_jmp_jsrr},
+
+    {"trap", parseop_trap},
+    {"rti", parseop_rti},
+
     // directives
     {".orig", parseop_orig},
+    {".end", parseop_end},
+    {".fill", parseop_fill},
 };
 
 const match_op lccc_ops[] =
