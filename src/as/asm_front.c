@@ -241,6 +241,31 @@ MATCH_OP(parseop_mem_offset)
     return true;
 }
 
+MATCH_OP(parseop_mem_boffset)
+{
+    TOK_IT_INIT();
+
+    if (!strcmp_caseless("ldr", tok.str))
+        op->asop = OP_LDR;
+    else
+        op->asop = OP_STR;
+
+    TOK_IT_NEXT(); TOK_OPER_PARSE(); TOK_OPER_ASSERT_REG(); TOK_OPER_PUSH();
+    TOK_IT_NEXT(); TOK_ASSERT_COMMA();
+    TOK_IT_NEXT(); TOK_OPER_PARSE(); TOK_OPER_ASSERT_REG(); TOK_OPER_PUSH();
+    TOK_IT_NEXT(); TOK_ASSERT_COMMA();
+    TOK_IT_NEXT(); TOK_OPER_PARSE_ISO(6, true);
+    if (oper.type != OPERAND_IMM) {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "Expected 6-bit offset");
+        return false;
+    }
+    TOK_OPER_ASSERT_IMM_BOUNDS(31, -32); TOK_OPER_PUSH();
+
+    TOK_ASSERT_DONE();
+    return true;
+}
+
 // directives
 MATCH_OP(parseop_orig)
 {
@@ -270,8 +295,10 @@ const match_op patt_ops[] =
     {"lea", parseop_mem_offset},
     {"ld", parseop_mem_offset},
     {"ldi", parseop_mem_offset},
+    {"ldr", parseop_mem_boffset},
     {"st", parseop_mem_offset},
     {"sti", parseop_mem_offset},
+    {"str", parseop_mem_boffset},
 
     // directives
     {".orig", parseop_orig},
@@ -345,7 +372,7 @@ int parse_lines(asm_context * context, asm_program * prog)
     while (!it_is_end(&line_it)) {
         line = it_ptr(&line_it);
 
-        if (parse_line(context, prog, line))
+        if (!parse_line(context, prog, line))
             ++error_count;
         it_next(&line_it, 1);
     }
