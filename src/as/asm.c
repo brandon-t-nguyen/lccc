@@ -31,6 +31,7 @@ void asm_line_dtor(asm_line * line)
 void asm_op_ctor(asm_op * op)
 {
     vector_ctor(&op->operands, sizeof(asm_op), NULL, NULL);
+    op->asop = OP_INVALID;
 }
 
 void asm_op_dtor(asm_op * op)

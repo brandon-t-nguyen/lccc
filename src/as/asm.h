@@ -76,6 +76,8 @@ typedef enum _asm_asop
     OP_DEFINE_SYM,    // define a local/static symbol
     OP_GLOBAL_SYM,    // specify symbol as exportable
     OP_EXTERN_SYM,    // refer to external symbol
+
+    OP_INVALID
 } asm_asop;
 
 /**
