@@ -46,7 +46,7 @@ void asm_source_dtor(asm_source * code);
 /**
  * Assembler operation
  */
-typedef enum _asm_mnem
+typedef enum _asm_asop
 {
     // assembly opcodes
     OP_ADD,
@@ -76,17 +76,18 @@ typedef enum _asm_mnem
     OP_DEFINE_SYM,    // define a local/static symbol
     OP_GLOBAL_SYM,    // specify symbol as exportable
     OP_EXTERN_SYM,    // refer to external symbol
-} asm_mnem;
+} asm_asop;
 
 /**
  * Assembler operand type
  */
 typedef enum _asm_optype
 {
-    OPERAND_IMM, // immediate
-    OPERAND_REG, // register
-    OPERAND_STR, // string
-    OPERAND_COND, // string
+    OPERAND_IMM,    // immediate
+    OPERAND_REG,    // register
+    OPERAND_COND,   // condition code
+    OPERAND_STR,    // string
+    OPERAND_INV     // invalid operand
 } asm_optype;
 
 typedef struct _asm_cc
@@ -96,11 +97,12 @@ typedef struct _asm_cc
     int p:1;
 } asm_cc;
 
+// operands are PODs: they don't own data
 typedef struct _asm_opdata
 {
-    int     imm;
-    int     reg;
-    char *  str;
+    int           imm;
+    int           reg;
+    const char *  str;
     asm_cc  cond;
 } asm_opdata;
 
@@ -108,18 +110,19 @@ typedef struct _asm_operand
 {
     asm_optype type;
     asm_opdata data;
+
+    const asm_token * token; // for error printing
 } asm_operand;
-void asm_operand_dtor(asm_operand * operand);
 
 /**
  * Assembler operation
  */
 typedef struct _asm_op
 {
-    asm_mnem mnem;
+    asm_asop asop;
     vector(asm_operand) operands;
 
-    const asm_line * line;  // debugging purposes line
+    const asm_line * line; // for error printing
 } asm_op;
 void asm_op_ctor(asm_op * op);
 void asm_op_dtor(asm_op * op);

@@ -28,16 +28,9 @@ void asm_line_dtor(asm_line * line)
     }
 }
 
-void asm_operand_dtor(asm_operand * operand)
-{
-    if (operand->type == OP_STR) {
-        free(operand->data.str);
-    }
-}
-
 void asm_op_ctor(asm_op * op)
 {
-    vector_ctor(&op->operands, sizeof(asm_op), NULL, asm_operand_dtor);
+    vector_ctor(&op->operands, sizeof(asm_op), NULL, NULL);
 }
 
 void asm_op_dtor(asm_op * op)
