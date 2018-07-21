@@ -499,7 +499,7 @@ MATCH_OP(parseop_string)
 {
     TOK_IT_INIT();
 
-    if (tok.str[6] == 'z')
+    if (tok.str[7] == 'z' || tok.str[7] == 'Z')
         op->asop = OP_STRINGZ;
     else
         op->asop = OP_STRINGP;
