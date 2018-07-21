@@ -640,6 +640,14 @@ int parse_lines(asm_context * context, asm_program * prog)
 
         if (!parse_line(context, prog, line))
             ++error_count;
+
+        // early end if last pushed op is .end in patt syntax
+        if (context->params.syntax == AS_SYNTAX_PATT) {
+            asm_op * op = (asm_op *) vector_backp(&prog->ops);
+            if (op->asop == OP_END)
+                break;
+        }
+
         it_next(&line_it, 1);
     }
     return error_count;
