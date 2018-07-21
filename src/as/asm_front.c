@@ -568,11 +568,11 @@ const match_op patt_ops[] =
     {".fill", parseop_fill},
     {".blkw", parseop_blkw},
     {".stringz", parseop_string},
-    {".stringp", parseop_string},
 };
 
 const match_op lccc_ops[] =
 {
+    {".stringp", parseop_string},
 };
 
 
