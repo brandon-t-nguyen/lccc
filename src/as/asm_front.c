@@ -156,6 +156,7 @@ asm_optype parse_operand(asm_operand * oper,
     }
 
 #define TOK_OPER_PUSH()\
+    oper.token = (const asm_token *) it_ptr(&it);\
     vector_push_back(&op->operands, &oper);
 
 #define TOK_ASSERT_COMMA()\
