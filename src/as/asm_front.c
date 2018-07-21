@@ -14,6 +14,8 @@
 #include "asm.h"
 #include "print.h"
 
+#define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
+
 typedef struct match_op
 {
     const char * str;
@@ -21,8 +23,8 @@ typedef struct match_op
     // if label is true, then tokens[0] is a label: use tokens[1]
     bool (* func)(asm_op * op, const asm_context * context, const asm_source * src, const asm_line * line, bool label);
 } match_op;
-#define MATCH_OP(_name) static bool _name(asm_op * op, const asm_context * context, const asm_source * src,  const asm_line * line, bool label)
 
+#define MATCH_OP(_name) static bool _name(asm_op * op, const asm_context * context, const asm_source * src,  const asm_line * line, bool label)
 
 typedef enum parse_type
 {
@@ -172,6 +174,24 @@ asm_optype parse_operand(asm_operand * oper,
         return false;\
     }
 
+// generates a function that generates a predefined asm operation
+//static bool _name(asm_op * op, const asm_context * context, const asm_source * src,  const asm_line * line, bool label){
+#define GEN_OP(_name, _optype, _operand_list)\
+    MATCH_OP(_name)\
+    {\
+        TOK_IT_INIT();\
+        op->asop = _optype;\
+        asm_operand operands[] = _operand_list;\
+        for (size_t i = 0; i < ARRAY_LEN(operands); ++i) {\
+            vector_push_back(&op->operands, &operands[i]);\
+        }\
+        TOK_ASSERT_DONE();\
+        return true;\
+    }
+
+// protection macro: curly brackets don't escape commas for macros
+#define ARRAY(...) {__VA_ARGS__}
+
 // ALU
 MATCH_OP(parseop_add_and)
 {
@@ -280,6 +300,12 @@ MATCH_OP(parseop_br)
     }
     else {
         oper.data.cond.n = 0; oper.data.cond.z = 0; oper.data.cond.p = 0;
+        if (strcfind(tok.str, 'n', 2) != SIZE_MAX)
+            oper.data.cond.n = 1;
+        if (strcfind(tok.str, 'z', 2) != SIZE_MAX)
+            oper.data.cond.z = 1;
+        if (strcfind(tok.str, 'p', 2) != SIZE_MAX)
+            oper.data.cond.p = 1;
     }
 
     TOK_IT_NEXT(); TOK_OPER_PARSE_ISO(9, true);
@@ -308,16 +334,7 @@ MATCH_OP(parseop_jmp_jsrr)
     return true;
 }
 
-MATCH_OP(parseop_ret)
-{
-    TOK_IT_INIT();
-    op->asop = OP_JMP;
-    oper.type = OPERAND_REG;
-    oper.data.reg = 7;
-    TOK_OPER_PUSH();
-    TOK_ASSERT_DONE();
-    return true;
-}
+GEN_OP(parseop_ret, OP_JMP, ARRAY({.type = OPERAND_REG, .data.reg = 7}))
 
 MATCH_OP(parseop_jsr)
 {
@@ -341,7 +358,7 @@ MATCH_OP(parseop_trap)
 {
     TOK_IT_INIT();
 
-    op->asop = OP_ORIG;
+    op->asop = OP_TRAP;
 
     TOK_IT_NEXT();
     TOK_OPER_PARSE();
@@ -361,6 +378,32 @@ MATCH_OP(parseop_trap)
     TOK_ASSERT_DONE();
     return true;
 }
+
+MATCH_OP(parseop_trap_mnem)
+{
+    TOK_IT_INIT();
+
+    op->asop = OP_TRAP;
+
+    oper.type = OPERAND_IMM;
+    if (!strcmp_caseless("halt", tok.str))
+        oper.data.imm = 0x25;
+    else if (!strcmp_caseless("getc", tok.str))
+        oper.data.imm = 0x20;
+    else if (!strcmp_caseless("out", tok.str))
+        oper.data.imm = 0x21;
+    else if (!strcmp_caseless("puts", tok.str))
+        oper.data.imm = 0x22;
+    else if (!strcmp_caseless("in", tok.str))
+        oper.data.imm = 0x23;
+    else if (!strcmp_caseless("putsp", tok.str))
+        oper.data.imm = 0x24;
+    TOK_OPER_PUSH();
+
+    TOK_ASSERT_DONE();
+    return true;
+}
+
 
 MATCH_OP(parseop_rti)
 {
@@ -424,6 +467,61 @@ MATCH_OP(parseop_fill)
     return true;
 }
 
+MATCH_OP(parseop_blkw)
+{
+    TOK_IT_INIT();
+
+    op->asop = OP_BLKW;
+
+    TOK_IT_NEXT();
+    TOK_OPER_PARSE_ISO(16, false);
+    if (oper.type != OPERAND_IMM && oper.type != OPERAND_STR) {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "Operand is not a valid number of words to allocate");
+        return false;
+    }
+
+    if (oper.type == OPERAND_IMM) {
+        if ((oper.data.imm > 0xFFFF)) {
+            asm_msg_line_token(src, line, &tok, M_ERROR,
+                               "Number of words exceeds the 16-bit address space");
+            return false;
+        }
+    }
+    TOK_OPER_PUSH();
+
+    TOK_ASSERT_DONE();
+    return true;
+}
+
+MATCH_OP(parseop_string)
+{
+    TOK_IT_INIT();
+
+    if (tok.str[6] == 'z')
+        op->asop = OP_STRINGZ;
+    else
+        op->asop = OP_STRINGP;
+
+    TOK_IT_NEXT(); TOK_OPER_PARSE();
+    if (oper.type != OPERAND_STR) {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "Operand is not a string literal");
+        return false;
+    }
+
+    if (oper.data.str[0] != '"' ||
+        oper.data.str[strlen(oper.data.str) - 1] != '"') {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "String literals require a double quote (\") at the beginning and ending");
+        return false;
+    }
+
+    TOK_OPER_PUSH();
+    TOK_ASSERT_DONE();
+    return true;
+}
+
 const match_op patt_ops[] =
 {
     // instruction mnemonics
@@ -454,20 +552,28 @@ const match_op patt_ops[] =
     {"jsr", parseop_jsr},
     {"jsrr", parseop_jmp_jsrr},
 
-    {"trap", parseop_trap},
     {"rti", parseop_rti},
+    {"trap", parseop_trap},
+    {"halt", parseop_trap_mnem},
+    {"getc", parseop_trap_mnem},
+    {"out", parseop_trap_mnem},
+    {"puts", parseop_trap_mnem},
+    {"in", parseop_trap_mnem},
+    {"putsp", parseop_trap_mnem},
 
     // directives
     {".orig", parseop_orig},
     {".end", parseop_end},
     {".fill", parseop_fill},
+    {".blkw", parseop_blkw},
+    {".stringz", parseop_string},
+    {".stringp", parseop_string},
 };
 
 const match_op lccc_ops[] =
 {
 };
 
-#define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
 
 #define CHECK_OPS(_ops)\
     for (size_t i = 0; i < ARRAY_LEN(_ops); ++i) {\
