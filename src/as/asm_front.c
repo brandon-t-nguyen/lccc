@@ -671,6 +671,7 @@ as_ret asm_front(asm_context * context)
 
     if (error_count > 0) {
         msg(M_AS, M_FATAL, "%d errors found",error_count);
+        ret = AS_RET_BAD_INPUT;
     }
     return ret;
 }
