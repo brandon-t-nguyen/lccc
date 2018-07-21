@@ -617,7 +617,8 @@ bool parse_line(asm_context * context, asm_program * prog, const asm_line * line
     token = TOKEN(line, 1);
     str = token->str;
     CHECK_OPS(patt_ops);
-    CHECK_OPS(lccc_ops); // LCCC is an extension of Patt
+    if (context->params.syntax == AS_SYNTAX_LCCC)
+        CHECK_OPS(lccc_ops); // LCCC is an extension of Patt
 
 fail:
     // TODO: predict if token 0 is intended to be a label?
