@@ -575,11 +575,52 @@ const match_op lccc_ops[] =
     {".stringp", parseop_string},
 };
 
+static
+bool validate_symbol(const char * str)
+{
+    // first character must be alphabetic
+    if (!('A' <= str[0] && str[0] <= 'Z') &&
+        !('a' <= str[0] && str[0] <= 'z'))
+        return false;
+
+    // alphanumeric and '_' are the only allowed symbols
+    char c = *str;
+    while (c != '\0') {
+        if (!('A' <= c && c <= 'Z') &&
+            !('a' <= c && c <= 'z') &&
+            !('0' <= c && c <= '9') &&
+            !(c == '_')
+           )
+            return false;
+
+        ++str;
+        c = *str;
+    }
+
+    return true;
+}
+
+MATCH_OP(parseop_label)
+{
+    TOK_IT_INIT();
+
+    op->asop = OP_DEFINE_SYM;
+
+    oper.type = OPERAND_STR;
+    oper.data.str = tok.str;
+    if (!validate_symbol(oper.data.str)) {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "Invalid label '%s': first character must be alphabetic and the rest of characters must be alphanumeric or and underscore ('_')", oper.data.str);
+        return false;
+    }
+    TOK_OPER_PUSH();
+    return true;
+}
 
 #define CHECK_OPS(_ops)\
     for (size_t i = 0; i < ARRAY_LEN(_ops); ++i) {\
         if (!strcmp_caseless(_ops[i].str, str)) {\
-            ret = _ops[i].func(&op, context, src, line, false);\
+            ret = _ops[i].func(&op, context, src, line, label);\
             if (ret)\
                 vector_push_back(&prog->ops, &op);\
             else\
@@ -599,22 +640,33 @@ bool parse_line(asm_context * context, asm_program * prog, const asm_line * line
     char * str = NULL;
 
     asm_op op;
+
     asm_op_ctor(&op);
     op.line = line;
-
     // assume not token
     token = TOKEN(line, 0);
     str = token->str;
     CHECK_OPS(patt_ops);
-    CHECK_OPS(lccc_ops); // LCCC is an extension of Patt
+    if (context->params.syntax == AS_SYNTAX_LCCC)
+        CHECK_OPS(lccc_ops); // LCCC is an extension of Patt
 
     // 0th was unsuccesful: try index 1 for a mnemonic
     label = true;
+    ret = parseop_label(&op, context, src, line, false);
+    if (ret) {
+        vector_push_back(&prog->ops, &op);
+    } else {
+        asm_op_dtor(&op);
+        return false;
+    }
+
     if (num_tokens == 1) {
         // if only one token, it's probably a symbol declaration
         return true;
     }
 
+    asm_op_ctor(&op);
+    op.line = line;
     token = TOKEN(line, 1);
     str = token->str;
     CHECK_OPS(patt_ops);
