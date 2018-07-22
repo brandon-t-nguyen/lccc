@@ -160,6 +160,7 @@ typedef struct asm_section
 {
     uint16_t addr;
     vector(asm_op) ops;
+    vector(uint16_t) code;
 } asm_section;
 void asm_section_ctor(asm_section * section);
 void asm_section_dtor(asm_section * section);
@@ -172,7 +173,6 @@ typedef struct _asm_program
 
     uint16_t entry;
     vector(asm_section) sections;
-
 
     asm_symbol_table local;
     asm_symbol_table global;    // TODO: implement at some point
@@ -225,6 +225,12 @@ void asm_msg_line_token(const asm_source * src,
                         const asm_line * line,
                         const asm_token * token,
                         msg_level level, const char * fmt, ...);
+/**
+ * Wrapper if you just want to report a line
+ */
+void asm_msg_line(const asm_source * src,
+                  const asm_line * line,
+                  msg_level level, const char * fmt, ...);
 
 /**
  * Reads an opened file

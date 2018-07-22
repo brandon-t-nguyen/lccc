@@ -62,6 +62,31 @@ void asm_line_token_error(const asm_line * line, const asm_token * token)
 static const char * msg_prefix = MSG_PREFIX;
 static size_t msg_prefix_size = sizeof(MSG_PREFIX); // includes null term
 
+void asm_msg_line(const asm_source * src,
+                  const asm_line * line,
+                  msg_level level, const char * fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+
+    // format print the file name and line number first
+    char * buffer = (char *) malloc(sizeof(char) *
+                                    (strlen(fmt) +
+                                     msg_prefix_size +
+                                     strlen(src->name) + 10)
+                                    ); // +10 to cover the line number
+    sprintf(buffer, msg_prefix, src->name, line->number);
+
+    // append the caller's format string and call vfmsg with its formatting
+    strcat(buffer, fmt);
+    vfmsg(stdout, M_AS, level, buffer, ap);
+    asm_line_error(line, -1, -1, -1);
+
+    va_end(ap);
+
+    free(buffer);
+}
+
 void asm_msg_line_token(const asm_source * src,
                         const asm_line * line,
                         const asm_token * token,

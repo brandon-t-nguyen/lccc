@@ -320,6 +320,8 @@ MATCH_OP(parseop_br)
     TOK_ASSERT_DONE();
     return true;
 }
+static asm_cc nop = {.n = 1, .z = 1, .p = 1};
+GEN_OP(parseop_nop, OP_BR, ARRAY({.type = OPERAND_COND, .data.cond = nop}))
 
 MATCH_OP(parseop_jmp_jsrr)
 {
@@ -547,6 +549,7 @@ const match_op patt_ops[] =
     {"brzp", parseop_br},
     {"brnp", parseop_br},
     {"brnzp", parseop_br},
+    {"nop", parseop_nop},
 
     {"jmp", parseop_jmp_jsrr},
     {"ret", parseop_ret},

@@ -42,7 +42,7 @@ void asm_op_dtor(asm_op * op)
 void asm_section_ctor(asm_section * section)
 {
     section->addr = 0;
-    vector_ctor(&section->ops, sizeof(asm_op), NULL, asm_op_dtor);
+    vector_ctor(&section->ops, sizeof(asm_op), NULL, NULL); // the enclosing program manages op memory
 }
 
 void asm_section_dtor(asm_section * section)
