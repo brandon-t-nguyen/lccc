@@ -115,13 +115,18 @@ int main(int argc, char ** argv)
         exit(AS_RET_BAD_INPUT);
     }
 
-    as_ret ret;
-    // frontend
-    ret = asm_front(&context);
+    asm_front(&context);
+    asm_back(&context);
 
-    // TODO: backend
+    as_ret ret = AS_RET_OK;
+    if (context.error_count > 0) {
+        msg(M_AS, M_FATAL, "%d errors found", context.error_count);
+        ret = AS_RET_BAD_INPUT;
+    }
 
+    // TODO: emit the code
+
+done:
     asm_context_dtor(&context);
-
     return ret;
 }

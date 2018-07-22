@@ -138,14 +138,19 @@ void asm_op_dtor(asm_op * op);
 typedef struct _asm_symbol_val
 {
     uint16_t addr;
+
     // for error reporting
-    asm_line * line;
+    const asm_line * line;
 } asm_symbol_val;
 
 typedef struct _asm_symbol_table
 {
     bst table;
 } asm_symbol_table;
+void asm_symbol_table_ctor(asm_symbol_table * table);
+void asm_symbol_table_dtor(asm_symbol_table * table);
+bool asm_symbol_table_put(asm_symbol_table * table, const char * sym, asm_symbol_val * sym_val);
+bool asm_symbol_table_get(asm_symbol_table * table, const char * sym, asm_symbol_val * sym_val);
 
 /**
  * Section are composed of a bunch of operations associated with it
@@ -181,6 +186,8 @@ typedef struct _asm_context
     vector(char *)      file_paths;
     vector(FILE *)      files;
     vector(asm_program) progs;
+
+    int error_count;
 } asm_context;
 void asm_context_ctor(asm_context * context);
 void asm_context_dtor(asm_context * context);
@@ -188,8 +195,12 @@ void asm_context_dtor(asm_context * context);
 /**
  * Assembler frontend
  */
-as_ret asm_front(asm_context * context);
-as_ret asm_back(asm_context * context);
+int asm_front(asm_context * context);
+
+/**
+ * Assembler backend: handles emitting code
+ */
+int asm_back(asm_context * context);
 
 /**
  * Prints out the line, highlighting text and providing an arrow to

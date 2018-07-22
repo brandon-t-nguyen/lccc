@@ -428,6 +428,7 @@ MATCH_OP(parseop_orig)
                            "Operand is not a valid address");
         return false;
     }
+    TOK_OPER_PUSH();
 
     TOK_ASSERT_DONE();
     return true;
@@ -706,7 +707,7 @@ int parse_lines(asm_context * context, asm_program * prog)
     return error_count;
 }
 
-as_ret asm_front(asm_context * context)
+int asm_front(asm_context * context)
 {
     as_ret ret = AS_RET_OK;
     asm_program prog;
@@ -730,9 +731,7 @@ as_ret asm_front(asm_context * context)
         vector_push_back(&context->progs, &prog);
     }
 
-    if (error_count > 0) {
-        msg(M_AS, M_FATAL, "%d errors found",error_count);
-        ret = AS_RET_BAD_INPUT;
-    }
-    return ret;
+    context->error_count += error_count;
+
+    return error_count;
 }

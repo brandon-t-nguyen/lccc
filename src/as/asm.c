@@ -68,6 +68,9 @@ void asm_program_ctor(asm_program * prog)
 
     vector_ctor(&prog->ops, sizeof(asm_op), NULL, asm_op_dtor);
     vector_ctor(&prog->sections, sizeof(asm_section), NULL, asm_section_dtor);
+
+    asm_symbol_table_ctor(&prog->local);
+    asm_symbol_table_ctor(&prog->global);
 }
 
 void asm_program_dtor(asm_program * prog)
@@ -75,6 +78,9 @@ void asm_program_dtor(asm_program * prog)
     asm_source_dtor(&prog->src);
     vector_dtor(&prog->ops);
     vector_dtor(&prog->sections);
+
+    asm_symbol_table_dtor(&prog->local);
+    asm_symbol_table_dtor(&prog->global);
 }
 
 static
@@ -89,6 +95,8 @@ void asm_context_ctor(asm_context * context)
     vector_ctor(&context->file_paths, sizeof(const char *), NULL, NULL);
     vector_ctor(&context->files, sizeof(FILE *), NULL, fclose_shim);
     vector_ctor(&context->progs, sizeof(asm_program), NULL, asm_program_dtor);
+
+    context->error_count = 0;
 }
 
 void asm_context_dtor(asm_context * context)
@@ -96,4 +104,25 @@ void asm_context_dtor(asm_context * context)
     vector_dtor(&context->file_paths);
     vector_dtor(&context->files);
     vector_dtor(&context->progs);
+}
+
+void asm_symbol_table_ctor(asm_symbol_table * table)
+{
+    bst_ctor(&table->table, sizeof(const char *), sizeof(asm_symbol_val),
+             NULL, NULL, strcmp);
+}
+
+void asm_symbol_table_dtor(asm_symbol_table * table)
+{
+    bst_dtor(&table->table);
+}
+
+bool asm_symbol_table_put(asm_symbol_table * table, const char * sym, asm_symbol_val * sym_val)
+{
+    return bst_insert(&table->table, sym, sym_val);
+}
+
+bool asm_symbol_table_get(asm_symbol_table * table, const char * sym, asm_symbol_val * sym_val)
+{
+    return bst_find(&table->table, sym, sym_val);
 }
