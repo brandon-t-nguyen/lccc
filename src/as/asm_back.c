@@ -263,7 +263,7 @@ ASOP(asop_add_and)
 
 ASOP(asop_not)
 {
-    ASOP_INIT(1);
+    ASOP_INIT(2);
     ASOP_SET_OPCODE(0x9);
     ASOP_SET_DR(oper[0]->data.reg);
     ASOP_SET_SR1(oper[1]->data.reg);
