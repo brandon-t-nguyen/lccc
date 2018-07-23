@@ -241,6 +241,7 @@ bool symbol_pcoff(asm_program * prog, asm_section * sec, const char * sym, int *
 #define ASOP_SET_PCOFF9(_val) inst |= (_val & 0x1FF);
 #define ASOP_SET_PCOFF11(_val) inst |= (_val & 0x7FF);
 #define ASOP_SET_TRAPVEC(_val) inst |= (_val & 0xFF);
+#define ASOP_SET_BOFF6(_val) inst |= (_val & 0x3F);
 
 ASOP(asop_add_and)
 {
@@ -299,6 +300,20 @@ ASOP(asop_mem_pcoff)
 
     ASOP_CALC_PCOFF(1, 9);
     ASOP_SET_PCOFF9(pcoff);
+
+    ASOP_PUSH_INST();
+    return true;
+}
+
+ASOP(asop_mem_boff)
+{
+    ASOP_INIT(3);
+    int opcode = op->asop == OP_LDR ? 0x6 : 0x7;
+    ASOP_SET_OPCODE(opcode);
+
+    ASOP_SET_DR(oper[0]->data.reg);
+    ASOP_SET_SR1(oper[1]->data.reg);
+    ASOP_SET_BOFF6(oper[2]->data.imm);
 
     ASOP_PUSH_INST();
     return true;
@@ -387,6 +402,8 @@ ASOP(asop_stringz)
     ++str; // skip the start quote
     bool escaped = false;
     char c = *str;
+
+    // run until we reach the last quote (unscaped quote)
     while (!(!escaped && c == '"')) {
         if (!escaped && c == '\\') {
             escaped = true;
@@ -424,8 +441,10 @@ bool asm_assemble(asm_context * context, asm_program * prog, asm_section * sec, 
     ENTRY(OP_NOT, asop_not)
     ENTRY(OP_LEA, asop_mem_pcoff)
     ENTRY(OP_LD,  asop_mem_pcoff)
+    ENTRY(OP_LDR,  asop_mem_boff)
     ENTRY(OP_LDI, asop_mem_pcoff)
     ENTRY(OP_ST,  asop_mem_pcoff)
+    ENTRY(OP_STR,  asop_mem_boff)
     ENTRY(OP_STI, asop_mem_pcoff)
     ENTRY(OP_BR,  asop_br)
     ENTRY(OP_JMP,  asop_jmp_jsrr)
