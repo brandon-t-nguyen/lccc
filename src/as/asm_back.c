@@ -239,6 +239,8 @@ bool symbol_pcoff(asm_program * prog, asm_section * sec, const char * sym, int *
 #define ASOP_SET_SR2(_sr2) ASOP_SET_REG(_sr2, 0)
 #define ASOP_SET_IMM(_val) inst |= (0x1 << 5) | (_val & 0x1F);
 #define ASOP_SET_PCOFF9(_val) inst |= (_val & 0x1FF);
+#define ASOP_SET_PCOFF11(_val) inst |= (_val & 0x7FF);
+#define ASOP_SET_TRAPVEC(_val) inst |= (_val & 0xFF);
 
 ASOP(asop_add_and)
 {
@@ -302,14 +304,112 @@ ASOP(asop_mem_pcoff)
     return true;
 }
 
-/*
 ASOP(asop_br)
 {
-    ASOP_INIT(1);
+    ASOP_INIT(2);
     ASOP_SET_OPCODE(0x0);
-    ASOP_SET_PCOFF(oper[0]->data.imm);
+    ASOP_CALC_PCOFF(1, 9);
+    ASOP_SET_PCOFF9(pcoff);
+
+    // set condition codes
+    if (oper[0]->data.cond.n) inst |= 1 << 11;
+    if (oper[0]->data.cond.z) inst |= 1 << 10;
+    if (oper[0]->data.cond.p) inst |= 1 << 9;
+
+    ASOP_PUSH_INST();
+    return true;
 }
-*/
+
+ASOP(asop_jmp_jsrr)
+{
+    ASOP_INIT(1);
+
+    int opcode = op->asop == OP_JMP ? 0xC : 0x4;
+    ASOP_SET_OPCODE(opcode);
+    ASOP_CALC_PCOFF(0, 9);
+    ASOP_SET_SR1(oper[0]->data.reg);
+    ASOP_PUSH_INST();
+    return true;
+}
+
+ASOP(asop_jsr)
+{
+    ASOP_INIT(1);
+    ASOP_SET_OPCODE(0x4);
+    ASOP_CALC_PCOFF(0, 11);
+    ASOP_SET_PCOFF11(pcoff);
+    inst |= 1 << 11;
+    ASOP_PUSH_INST();
+    return true;
+}
+
+ASOP(asop_trap)
+{
+    ASOP_INIT(1);
+    ASOP_SET_OPCODE(0xF);
+    ASOP_SET_TRAPVEC(oper[0]->data.imm);
+    ASOP_PUSH_INST();
+    return true;
+}
+
+ASOP(asop_rti)
+{
+    ASOP_INIT(0);
+    inst = 0x8000;
+    ASOP_PUSH_INST();
+    return true;
+}
+
+ASOP(asop_fill)
+{
+    ASOP_INIT(1);
+    inst = oper[0]->data.imm;
+    ASOP_PUSH_INST();
+    return true;
+}
+
+ASOP(asop_blkw)
+{
+    ASOP_INIT(1);
+    int words = oper[0]->data.imm;
+    for (int i = 0; i < words; ++i) {
+        inst = 0;
+        ASOP_PUSH_INST();
+    }
+    return true;
+}
+
+ASOP(asop_stringz)
+{
+    ASOP_INIT(1);
+    const char * str = oper[0]->data.str;
+
+    ++str; // skip the start quote
+    bool escaped = false;
+    char c = *str;
+    while (!(!escaped && c == '"')) {
+        if (!escaped && c == '\\') {
+            escaped = true;
+        } else {
+            if (escaped && c == 'r')
+                c = '\r';
+            else if (escaped && c == 'n')
+                c = '\n';
+            else if (escaped && c == 't')
+                c = '\t';
+            inst = c & 0xFF;
+            ASOP_PUSH_INST();
+            escaped = false;
+        }
+
+        ++str;
+        c = *str;
+    }
+
+    inst = 0;
+    ASOP_PUSH_INST();
+    return true;
+}
 
 #define ENTRY(_asop, _func)\
     case _asop:\
@@ -327,6 +427,15 @@ bool asm_assemble(asm_context * context, asm_program * prog, asm_section * sec, 
     ENTRY(OP_LDI, asop_mem_pcoff)
     ENTRY(OP_ST,  asop_mem_pcoff)
     ENTRY(OP_STI, asop_mem_pcoff)
+    ENTRY(OP_BR,  asop_br)
+    ENTRY(OP_JMP,  asop_jmp_jsrr)
+    ENTRY(OP_JSRR,  asop_jmp_jsrr)
+    ENTRY(OP_JSR,  asop_jsr)
+    ENTRY(OP_TRAP,  asop_trap)
+    ENTRY(OP_RTI,  asop_rti)
+    ENTRY(OP_FILL,  asop_fill)
+    ENTRY(OP_BLKW,  asop_blkw)
+    ENTRY(OP_STRINGZ,  asop_stringz)
     default:
         msg(M_AS, M_WARN, "Op %s not implemented", asop_str(op->asop));
         break;

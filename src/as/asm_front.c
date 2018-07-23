@@ -308,6 +308,7 @@ MATCH_OP(parseop_br)
         if (strcfind(tok.str, 'p', 2) != SIZE_MAX)
             oper.data.cond.p = 1;
     }
+    TOK_OPER_PUSH();
 
     TOK_IT_NEXT(); TOK_OPER_PARSE_ISO(9, true);
     if (oper.type != OPERAND_IMM && oper.type != OPERAND_STR) {
@@ -514,12 +515,24 @@ MATCH_OP(parseop_string)
         return false;
     }
 
-    if (oper.data.str[0] != '"' ||
-        oper.data.str[strlen(oper.data.str) - 1] != '"') {
+    size_t len = strlen(oper.data.str);
+    if (len < 2 ||
+        oper.data.str[0] != '"' ||
+        oper.data.str[len - 1] != '"') {
         asm_msg_line_token(src, line, &tok, M_ERROR,
                            "String literals require a double quote (\") at the beginning and ending");
         return false;
     }
+
+    /*
+    // Turns out this is handled at the parsing step
+    if (oper.data.str[len - 1] == '"' &&
+        oper.data.str[len - 2] == '\\') {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "End quote is escaped with a \\: string literal is unterminated");
+        return false;
+    }
+    */
 
     TOK_OPER_PUSH();
     TOK_ASSERT_DONE();
