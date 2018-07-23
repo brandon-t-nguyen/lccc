@@ -53,7 +53,7 @@ cscope:
 	tools/cscope_gen.sh -d $(PROOT)/inc -d $(PROOT)/src -o $(PROOT)/cscope -b q
 
 test-as:
-	$(PROOT)/bin/lccc-as
+	testing/as/patt/test.sh
 
 mem-as:
 	valgrind --leak-check=full $(PROOT)/bin/lccc-as
