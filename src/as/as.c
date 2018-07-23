@@ -122,9 +122,17 @@ int main(int argc, char ** argv)
     if (context.error_count > 0) {
         msg(M_AS, M_FATAL, "%d errors found", context.error_count);
         ret = AS_RET_BAD_INPUT;
+        goto done;
     }
 
     // TODO: emit the code
+    asm_emit(&context);
+
+    if (context.error_count > 0) {
+        msg(M_AS, M_FATAL, "%d errors found", context.error_count);
+        ret = AS_RET_BAD_INPUT;
+        goto done;
+    }
 
 done:
     asm_context_dtor(&context);

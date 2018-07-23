@@ -187,6 +187,12 @@ typedef struct _asm_context
     vector(FILE *)      files;
     vector(asm_program) progs;
 
+    FILE * o_file;
+    FILE * h_file;
+    FILE * b_file;
+    FILE * s_file;
+    FILE * l_file;
+
     int error_count;
 } asm_context;
 void asm_context_ctor(asm_context * context);
@@ -198,9 +204,14 @@ void asm_context_dtor(asm_context * context);
 int asm_front(asm_context * context);
 
 /**
- * Assembler backend: handles emitting code
+ * Assembler backend: handles generating code
  */
 int asm_back(asm_context * context);
+
+/**
+ * Handles writing to file
+ */
+int asm_emit(asm_context * context);
 
 /**
  * Prints out the line, highlighting text and providing an arrow to

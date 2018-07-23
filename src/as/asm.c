@@ -43,11 +43,13 @@ void asm_section_ctor(asm_section * section)
 {
     section->addr = 0;
     vector_ctor(&section->ops, sizeof(asm_op), NULL, NULL); // the enclosing program manages op memory
+    vector_ctor(&section->code, sizeof(uint16_t), NULL, NULL);
 }
 
 void asm_section_dtor(asm_section * section)
 {
     vector_dtor(&section->ops);
+    vector_dtor(&section->code);
 }
 
 void asm_source_ctor(asm_source * code)
@@ -97,6 +99,12 @@ void asm_context_ctor(asm_context * context)
     vector_ctor(&context->progs, sizeof(asm_program), NULL, asm_program_dtor);
 
     context->error_count = 0;
+
+    context->o_file = NULL;
+    context->h_file = NULL;
+    context->b_file = NULL;
+    context->s_file = NULL;
+    context->l_file = NULL;
 }
 
 void asm_context_dtor(asm_context * context)
