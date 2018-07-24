@@ -126,12 +126,7 @@ as_ret asm_source_read(asm_source * code, const char * path, FILE * f)
                 }
                 break;
             case RD_QUOTE:
-                if (c == ' ' || c == '\t') {
-                    e_head = rd_head - 1;
-                    push_token(&line, raw_line, s_head, e_head);
-                    ++rd_head;
-                    state = RD_SEARCH;
-                } else if (c == '"') {
+                if (c == '"') {
                     if (raw_line[rd_head-1] != '\\') {
                         e_head = rd_head;
                         push_token(&line, raw_line, s_head, e_head);
