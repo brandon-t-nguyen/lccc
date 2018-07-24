@@ -15,22 +15,22 @@
 #include "print.h"
 
 static
-ssize_t get_last_dot_index(const char * str)
+size_t get_last_dot_index(const char * str)
 {
-    ssize_t len = strlen(str);
-    ssize_t idx = len - 1;
-    while (idx > -1) {
+    size_t len = strlen(str);
+    size_t idx = len - 1;
+    while (idx != SIZE_MAX) {
         if (str[idx] == '.')
             return idx;
         --idx;
     }
-    return -1;
+    return SIZE_MAX;
 }
 static
 char * replace_extension(const char * str, const char * rep)
 {
     char * buffer = NULL;
-    ssize_t dot_idx = get_last_dot_index(str);
+    size_t dot_idx = get_last_dot_index(str);
     if (dot_idx == -1) {
         // no dot: just append
         buffer = (char *) malloc(sizeof(char) * (strlen(str) + strlen(rep) + 1 + 1)); // + null and dot

@@ -15,11 +15,11 @@
 #include "print.h"
 
 void asm_string_error(const char * line,
-                      ssize_t hlight_beg, ssize_t hlight_end, ssize_t pos)
+                      size_t hlight_beg, size_t hlight_end, size_t pos)
 {
     size_t len = strlen(line);
 
-    if (hlight_beg < 0 && hlight_end < 0) {
+    if (hlight_beg == SIZE_MAX && hlight_end == SIZE_MAX) {
         printf("%s\n", line);
     } else {
         for (size_t i = 0; i < hlight_beg; ++i) {
@@ -32,7 +32,7 @@ void asm_string_error(const char * line,
         printf(ANSI_RESET "%s\n", line + hlight_end + 1);
     }
 
-    if (pos == -1)
+    if (pos == SIZE_MAX)
         return;
 
 
@@ -47,7 +47,7 @@ void asm_string_error(const char * line,
     printf(ANSI_RESET "\n"); // TODO: OS agnostic line separator macro?
 }
 
-void asm_line_error(const asm_line * line, ssize_t hlight_beg, ssize_t hlight_end, ssize_t pos)
+void asm_line_error(const asm_line * line, size_t hlight_beg, size_t hlight_end, size_t pos)
 {
     asm_string_error(line->raw, hlight_beg, hlight_end, pos);
 }
@@ -80,7 +80,7 @@ void asm_msg_line(const asm_source * src,
     // append the caller's format string and call vfmsg with its formatting
     strcat(buffer, fmt);
     vfmsg(stdout, M_AS, level, buffer, ap);
-    asm_line_error(line, -1, -1, -1);
+    asm_line_error(line, SIZE_MAX, SIZE_MAX, SIZE_MAX);
 
     va_end(ap);
 

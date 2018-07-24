@@ -216,13 +216,13 @@ int asm_emit(asm_context * context);
 /**
  * Prints out the line, highlighting text and providing an arrow to
  * the place of the line in question
- * Provide -1 to not specify highlighting or a position
+ * Provide SIZE_MAX to not specify highlighting or a position
  */
 void asm_string_error(const char * str,
-                      ssize_t hlight_beg, ssize_t hlight_end, ssize_t pos);
+                      size_t hlight_beg, size_t hlight_end, size_t pos);
 
 void asm_line_error(const asm_line * line,
-                    ssize_t hlight_beg, ssize_t hlight_end, ssize_t pos);
+                    size_t hlight_beg, size_t hlight_end, size_t pos);
 
 /**
  * Helper that can highlight a token

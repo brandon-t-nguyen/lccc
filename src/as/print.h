@@ -4,6 +4,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <stdarg.h>
+
 #include <btn/ansi.h>
 #include <btn/print.h>
 

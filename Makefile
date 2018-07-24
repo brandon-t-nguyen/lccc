@@ -17,7 +17,7 @@ export LD = x86_64-w64-mingw32-ld
 export AR = x86_64-w64-mingw32-ar
 endif
 
-export CFLAGS = -Wall -Wextra -Wno-unused-parameter -g -DPLATFORM_$(PLATFORM) -DDEF_$(DEFAULT)
+export CFLAGS = --std=c99 -Wall -Wextra -Wno-unused-parameter -g -DPLATFORM_$(PLATFORM) -DDEF_$(DEFAULT)
 export LIBS   = -L$(LIBDIR) -lbtn
 export INCLUDE = -I$(PROOT)/inc
 
