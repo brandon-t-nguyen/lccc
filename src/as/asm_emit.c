@@ -31,7 +31,7 @@ char * replace_extension(const char * str, const char * rep)
 {
     char * buffer = NULL;
     size_t dot_idx = get_last_dot_index(str);
-    if (dot_idx == -1) {
+    if (dot_idx == SIZE_MAX) {
         // no dot: just append
         buffer = (char *) malloc(sizeof(char) * (strlen(str) + strlen(rep) + 1 + 1)); // + null and dot
         sprintf(buffer, "%s.%s", str, rep);
