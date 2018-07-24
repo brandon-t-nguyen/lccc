@@ -42,6 +42,7 @@ parse_type parse_num(const char * str, int * val)
     cnt = sscanf(str, "x%x", val); if (cnt > 0) return PARSE_HEX;
     cnt = sscanf(str, "0x%x", val); if (cnt > 0) return PARSE_HEX;
     cnt = sscanf(str, "#%d", val); if (cnt > 0) return PARSE_DEC;
+    cnt = sscanf(str, "%d", val); if (cnt > 0) return PARSE_DEC;
     return PARSE_INV;
 }
 
@@ -596,9 +597,10 @@ const match_op lccc_ops[] =
 static
 bool validate_symbol(const char * str)
 {
-    // first character must be alphabetic
+    // first character must be alphabetic or underscore
     if (!('A' <= str[0] && str[0] <= 'Z') &&
-        !('a' <= str[0] && str[0] <= 'z'))
+        !('a' <= str[0] && str[0] <= 'z') &&
+        !(str[0] == '_'))
         return false;
 
     // alphanumeric and '_' are the only allowed symbols

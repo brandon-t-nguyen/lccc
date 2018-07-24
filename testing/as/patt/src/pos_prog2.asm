@@ -99,7 +99,7 @@ free
     add r0, r0, #0
     brz _f_restore  ; if not valid, return
 
-    ldr r1, r0 #-1  ; get the header
+    ldr r1, r0, #-1 ; get the header
     brzp _f_restore ; if it's already free, return
     not r2, r1
     add r2, r2, #1  ; negate the size: it's positive now
