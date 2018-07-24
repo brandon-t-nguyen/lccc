@@ -361,7 +361,6 @@ ASOP(asop_jmp_jsrr)
 
     int opcode = op->asop == OP_JMP ? 0xC : 0x4;
     ASOP_SET_OPCODE(opcode);
-    ASOP_CALC_PCOFF(0, 9);
     ASOP_SET_SR1(oper[0]->data.reg);
     ASOP_PUSH_INST();
     return true;
