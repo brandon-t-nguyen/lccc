@@ -192,12 +192,23 @@ bool symbol_pcoff(asm_program * prog, asm_section * sec, const char * sym, int *
     return true;
 }
 
+static
+bool symbol_addr(asm_program * prog, asm_section * sec, const char * sym, int *addr)
+{
+    asm_symbol_val sym_val;
+    if (!asm_symbol_table_get(&prog->local, sym, &sym_val)) {
+        return false;
+    }
+    *addr = sym_val.addr;
+    return true;
+}
+
 // shorthand macro for the function signature
 #define ASOP(_name) static bool _name(asm_context * context, asm_program * prog, asm_section * sec, asm_op * op)
 #define ASOP_OPER(_i) ((asm_operand *) vector_getp(&op->operands, _i))
 #define ASOP_INIT(_num_oper)\
     uint16_t inst = 0x0000;\
-    int pcoff = 0;\
+    int addr = 0;\
     asm_operand * oper[_num_oper];\
     for (int i = 0; i < _num_oper; ++i) {\
         oper[i] = ASOP_OPER(i);\
@@ -214,10 +225,10 @@ bool symbol_pcoff(asm_program * prog, asm_section * sec, const char * sym, int *
 
 #define ASOP_CALC_PCOFF(_oper_num, _bits) {\
     if (oper[_oper_num]->type == OPERAND_IMM) {\
-        pcoff = oper[_oper_num]->data.imm;\
+        addr = oper[_oper_num]->data.imm;\
     } else {\
         const char * sym = oper[_oper_num]->data.str;\
-        if (!symbol_pcoff(prog, sec, sym, &pcoff)) {\
+        if (!symbol_pcoff(prog, sec, sym, &addr)) {\
             asm_msg_line_token(&prog->src, op->line, oper[_oper_num]->token, M_ERROR,\
                                "Undeclared symbol '%s'", sym);\
             return false;\
@@ -225,9 +236,18 @@ bool symbol_pcoff(asm_program * prog, asm_section * sec, const char * sym, int *
     }\
     int lo = (~0) << _bits;\
     int hi = (1) << _bits;\
-    if (pcoff < lo || hi < pcoff) {\
+    if (addr < lo || hi < addr) {\
         asm_msg_line_token(&prog->src, op->line, oper[_oper_num]->token, M_ERROR,\
-                           "Resulting PC-offset will be %d, exceeding %d bits", pcoff, _bits);\
+                           "Resulting PC-offset will be %d, exceeding %d bits", addr, _bits);\
+        return false;\
+    }\
+}
+
+#define ASOP_SYM_ADDR(_oper_num) {\
+    const char * sym = oper[_oper_num]->data.str;\
+    if (!symbol_addr(prog, sec, sym, &addr)) {\
+        asm_msg_line_token(&prog->src, op->line, oper[_oper_num]->token, M_ERROR,\
+                           "Undeclared symbol '%s'", sym);\
         return false;\
     }\
 }
@@ -299,7 +319,7 @@ ASOP(asop_mem_pcoff)
     ASOP_SET_DR(oper[0]->data.reg);
 
     ASOP_CALC_PCOFF(1, 9);
-    ASOP_SET_PCOFF9(pcoff);
+    ASOP_SET_PCOFF9(addr);
 
     ASOP_PUSH_INST();
     return true;
@@ -324,7 +344,7 @@ ASOP(asop_br)
     ASOP_INIT(2);
     ASOP_SET_OPCODE(0x0);
     ASOP_CALC_PCOFF(1, 9);
-    ASOP_SET_PCOFF9(pcoff);
+    ASOP_SET_PCOFF9(addr);
 
     // set condition codes
     if (oper[0]->data.cond.n) inst |= 1 << 11;
@@ -352,7 +372,7 @@ ASOP(asop_jsr)
     ASOP_INIT(1);
     ASOP_SET_OPCODE(0x4);
     ASOP_CALC_PCOFF(0, 11);
-    ASOP_SET_PCOFF11(pcoff);
+    ASOP_SET_PCOFF11(addr);
     inst |= 1 << 11;
     ASOP_PUSH_INST();
     return true;
@@ -378,7 +398,12 @@ ASOP(asop_rti)
 ASOP(asop_fill)
 {
     ASOP_INIT(1);
-    inst = oper[0]->data.imm;
+    if (oper[0]->type == OPERAND_IMM) {
+        inst = oper[0]->data.imm;
+    } else {
+        ASOP_SYM_ADDR(0);
+        inst = addr & 0xFFFF;
+    }
     ASOP_PUSH_INST();
     return true;
 }
