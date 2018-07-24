@@ -114,10 +114,18 @@ void asm_context_dtor(asm_context * context)
     vector_dtor(&context->progs);
 }
 
+static
+int strcmp_shim(void * arg1, void * arg2)
+{
+    char * str1 = *(char **)arg1;
+    char * str2 = *(char **)arg2;
+    return strcmp(str1, str2);
+}
+
 void asm_symbol_table_ctor(asm_symbol_table * table)
 {
     bst_ctor(&table->table, sizeof(const char *), sizeof(asm_symbol_val),
-             NULL, NULL, strcmp);
+             NULL, NULL, strcmp_shim);
 }
 
 void asm_symbol_table_dtor(asm_symbol_table * table)
@@ -127,10 +135,10 @@ void asm_symbol_table_dtor(asm_symbol_table * table)
 
 bool asm_symbol_table_put(asm_symbol_table * table, const char * sym, asm_symbol_val * sym_val)
 {
-    return bst_insert(&table->table, sym, sym_val);
+    return bst_insert(&table->table, &sym, sym_val);
 }
 
 bool asm_symbol_table_get(asm_symbol_table * table, const char * sym, asm_symbol_val * sym_val)
 {
-    return bst_find(&table->table, sym, sym_val);
+    return bst_find(&table->table, &sym, sym_val);
 }
