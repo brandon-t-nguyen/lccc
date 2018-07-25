@@ -433,6 +433,11 @@ MATCH_OP(parseop_orig)
                            "Operand is not a valid address");
         return false;
     }
+    if (oper.data.imm > 0xFFFF) {
+        asm_msg_line_token(src, line, &tok, M_ERROR,
+                           "Address exceeds the 16-bit address space");
+        return false;
+    }
     TOK_OPER_PUSH();
 
     TOK_ASSERT_DONE();
