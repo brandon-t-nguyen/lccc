@@ -17,4 +17,5 @@ l8
     brnp    l2
 l9
     brnzp   l1
+    nop
 .end

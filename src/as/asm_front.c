@@ -323,8 +323,8 @@ MATCH_OP(parseop_br)
     TOK_ASSERT_DONE();
     return true;
 }
-static asm_cc nop = {.n = 1, .z = 1, .p = 1};
-GEN_OP(parseop_nop, OP_BR, ARRAY({.type = OPERAND_COND, .data.cond = nop}))
+static asm_cc nop = {.n = 0, .z = 0, .p = 0};
+GEN_OP(parseop_nop, OP_BR, ARRAY({.type = OPERAND_COND, .data.cond = nop}, {.type = OPERAND_IMM, .data.imm = 0}))
 
 MATCH_OP(parseop_jmp_jsrr)
 {
