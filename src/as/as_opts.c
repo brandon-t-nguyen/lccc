@@ -180,17 +180,17 @@ const option as_options[] = {
 #endif
     {"-o", "--output",      true,   opt_output,     "OBJFILE",      "out.obj",
         "Set the name of the object file"},
-    {NULL, "--syntax",      true,   opt_syntax,     "[patt|lccc]",  DEF_SYNTAX,
+    {NULL, "--syntax",      true,   opt_syntax,     "[patt|lccc (TODO)]",  DEF_SYNTAX,
         "Sets the assembler syntax to Patt or LCCC"},
-    {NULL, "--out-format",  true,   opt_out_format, "[obj|llf]",    DEF_FORMAT,
+    {NULL, "--out-format",  true,   opt_out_format, "[obj|llf (TODO)]",    DEF_FORMAT,
         "Sets the output format to .obj or LLF"},
-    {NULL, "--lst",         false,  opt_obj_lst,    NULL,   NULL,
+    {NULL, "--lst (TODO)",         false,  opt_obj_lst,    NULL,   NULL,
         "Produce a assembly listing file\n"
         "Output file retains the file name except with a .lst extension"},
 
     {NULL, NULL, true, NULL, NULL, NULL,
         "These following options are relevant when the output format is .obj"},
-    {NULL, "--in-format",   true,   opt_in_format,  "[asm|bin|hex]", "asm",
+    {NULL, "--in-format (TODO)",   true,   opt_in_format,  "[asm|bin|hex]", "asm",
         "Sets the input format to assemble/translate"},
     {NULL, "--hex",         false,  opt_obj_hex,    NULL,   NULL,
         "Produce plaintext hexadecimal file\n"
@@ -198,7 +198,7 @@ const option as_options[] = {
     {NULL, "--bin",         false,  opt_obj_bin,    NULL,   NULL,
         "Produce plaintext binary file\n"
         "Output file retains the file name except with a .bin extension"},
-    {NULL, "--sym",         false,  opt_obj_sym,    NULL,   NULL,
+    {NULL, "--sym (TODO)",         false,  opt_obj_sym,    NULL,   NULL,
         "Produce a symbol table file\n"
         "Output file retains the file name except with a .sym extension"},
     {NULL, NULL, true, NULL, NULL, NULL, NULL},

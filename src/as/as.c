@@ -47,8 +47,8 @@ extern size_t as_num_options;
 
 void print_version(void)
 {
-    printf("LCCC LC-3 assembler v0.01a\n"
-           "Copyright (C) 2017 Brandon Nguyen\n"
+    printf("LCCC LC-3 assembler v0.1a\n"
+           "Copyright (C) 2018 Brandon Nguyen\n"
            "\n"
            COMPILE_STRING);
 }
