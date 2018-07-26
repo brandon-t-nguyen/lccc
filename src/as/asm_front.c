@@ -635,7 +635,7 @@ MATCH_OP(parseop_label)
     oper.data.str = tok.str;
     if (!validate_symbol(oper.data.str)) {
         asm_msg_line_token(src, line, &tok, M_ERROR,
-                           "Invalid label '%s': first character must be alphabetic and the rest of characters must be alphanumeric or and underscore ('_')", oper.data.str);
+                           "Invalid label '%s': first character must be alphabetic or an underscore and the rest of characters must be alphanumeric or and underscore ('_')", oper.data.str);
         return false;
     }
     TOK_OPER_PUSH();
