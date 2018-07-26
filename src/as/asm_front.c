@@ -732,7 +732,7 @@ int parse_lines(asm_context * context, asm_program * prog)
     if (context->params.syntax == AS_SYNTAX_PATT) {
         asm_op * op = (asm_op *) vector_backp(&prog->ops);
         if (op->asop != OP_END) {
-            msg(M_AS, M_ERROR, "%s: Expected the use of the .END directive");
+            msg(M_AS, M_ERROR, "%s: Expected the use of the .END directive", prog->src.name);
         }
     }
 
