@@ -156,7 +156,7 @@ int asm_pass_one(asm_context * context, asm_program * prog)
             if (sec == NULL) {
                     asm_msg_line(&prog->src,
                                  op->line,
-                                 M_ERROR, "Section has not been specified: have you used a sectioning directive?");
+                                 M_ERROR, "Section has not been specified: .ORIG or other sectioning directive is either not present or had an error");
 
                 ++error_count;
                 break;
