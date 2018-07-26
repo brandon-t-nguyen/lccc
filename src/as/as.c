@@ -120,7 +120,7 @@ int main(int argc, char ** argv)
 
     as_ret ret = AS_RET_OK;
     if (context.error_count > 0) {
-        msg(M_AS, M_FATAL, "%d errors found", context.error_count);
+        msg(M_AS, M_FATAL, "%d error%s found", context.error_count, context.error_count > 1 ? "s" : "");
         ret = AS_RET_BAD_INPUT;
         goto done;
     }
@@ -129,7 +129,7 @@ int main(int argc, char ** argv)
     asm_emit(&context);
 
     if (context.error_count > 0) {
-        msg(M_AS, M_FATAL, "%d errors found", context.error_count);
+        msg(M_AS, M_FATAL, "%d error%s found", context.error_count, context.error_count > 1 ? "s" : "");
         ret = AS_RET_BAD_INPUT;
         goto done;
     }
