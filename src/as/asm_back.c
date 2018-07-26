@@ -237,8 +237,17 @@ bool symbol_addr(asm_program * prog, asm_section * sec, const char * sym, int *a
     int lo = (~0) << _bits;\
     int hi = (1) << _bits;\
     if (addr < lo || hi < addr) {\
-        asm_msg_line_token(&prog->src, op->line, oper[_oper_num]->token, M_ERROR,\
-                           "Resulting PC-offset will be %d, exceeding %d bits", addr, _bits);\
+        if (oper[_oper_num]->type == OPERAND_IMM) {\
+            asm_msg_line_token(&prog->src, op->line, oper[_oper_num]->token, M_ERROR,\
+                               "Resulting PC-offset will be %d, exceeding %d bits", addr, _bits);\
+        } else {\
+            asm_symbol_val sym_val;\
+            const char * sym = oper[_oper_num]->data.str;\
+            asm_symbol_table_get(&prog->local, sym, &sym_val);\
+            asm_msg_line_token(&prog->src, op->line, oper[_oper_num]->token, M_ERROR,\
+                               "Resulting PC-offset from x%04X to symbol '%s' at x%04X exceeds %d bits",\
+                               section_next(sec) + 1, sym, sym_val.addr, _bits);\
+        }\
         return false;\
     }\
 }
