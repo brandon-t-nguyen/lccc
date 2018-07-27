@@ -27,9 +27,11 @@ for file in $tests
 do
     test=${file##*/}           # extract the file name sans .asm extension
     test=${test%.asm}
-    outfile="tmp/$test.hex"
+    out_hex="tmp/$test.hex"
+    out_bin="tmp/$test.bin"
+    out_obj="tmp/$test.obj"
 
-    cmd="./$exe $file -o $outdir/$test.obj --hex"
+    cmd="./$exe $file -o $outdir/$test.obj --hex --bin --sym"
     echo $cmd
     
     # check if file is negative test case or not
@@ -45,7 +47,9 @@ do
         
         if [ $ret == 0 ]
         then
-            result="$(diff -q -N $outfile $expect_dir/$test.hex)"
+            result_hex="$(diff -q -N $out_hex $expect_dir/$test.hex)"
+            result_bin="$(diff -q -N $out_bin  $expect_dir/$test.bin)"
+            result_obj="$(diff -q <(xxd $out_obj) <(xxd $expect_dir/$test.obj))"
         fi
 
         if [ $ret != 0 ]
@@ -54,7 +58,7 @@ do
             result_list+=($fail_str)
             fail_count=$((fail_count+1))
             echo -e "$test: $fail_str"
-        elif [ -z "$result" ]
+        elif [ -z "$result_hex"  ] && [ -z "$result_bin" ] && [ -z "$result_obj" ]
         then
             # success
             result_list+=($pass_str)
@@ -65,8 +69,25 @@ do
             result_list+=($fail_str)
             fail_count=$((fail_count+1))
             echo -e "$test: $fail_str"
+            
             # print a diff: use <(nl ...) to recognize line numbers: -t to expandtab
-            diff -t -N -y  <(nl $outfile) <(nl $expect_dir/$test.hex)
+            if [[ ! -z "$result_hex" ]]
+            then
+                echo "Differences in .hex file..."
+                diff -t -N -y  <(nl $out_hex) <(nl $expect_dir/$test.hex)
+            fi
+
+            if [[ ! -z "$result_bin" ]]
+            then
+                echo "Differences in .bin file..."
+                diff -t -N -y  <(nl $out_bin) <(nl $expect_dir/$test.bin)
+            fi
+
+            if [[ ! -z "$result_obj" ]]
+            then
+                echo "Differences in .obj file..."
+                diff -t -N -y  <(xxd $out_obj) <(xxd $expect_dir/$test.obj)
+            fi
         fi
         echo "|==================>"
         echo ""
