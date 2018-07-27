@@ -84,7 +84,8 @@ asm_optype parse_operand(asm_operand * oper,
                     oper->data.imm = isos(oper->data.imm, bits - 1, 0);
             }
         }
-    } else if (sscanf(token->str, "r%u", &oper->data.reg) > 0) {
+    } else if (sscanf(token->str, "r%u", &oper->data.reg) > 0 ||
+               sscanf(token->str, "R%u", &oper->data.reg) > 0) {
         // reg
         if (0 <= oper->data.reg && oper->data.reg <= 7) {
             oper->type = OPERAND_REG;
