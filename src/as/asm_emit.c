@@ -9,6 +9,7 @@
 #include <btn/vector.h>
 #include <btn/cstr.h>
 #include <btn/bst.h>
+#include <btn/iterator.h>
 
 #include "as.h"
 #include "asm.h"
@@ -106,6 +107,29 @@ void emit(asm_context * context, uint16_t word)
     }
 }
 
+// writes out "traditional" symbol table
+static
+void write_symbol_table(asm_context * context, asm_program * prog)
+{
+    FILE * f = context->s_file;
+    fprintf(f, "// Symbol Name          Page Address\n");
+    fprintf(f, "// -------------------- ------------\n");
+
+    bst_it it;
+    it_begin(&prog->local.table, &it);
+    while (!it_is_end(&it)) {
+        bst_node * node;
+        it_read(&it, &node);
+        const char * sym;
+        asm_symbol_val sym_val;
+        bst_node_get_key(&prog->local.table, node, &sym);
+        bst_node_get_val(&prog->local.table, node, &sym_val);
+        fprintf(f, "// %-20s         %04X\n", sym, sym_val.addr);
+
+        it_next(&it, 1);
+    }
+}
+
 int asm_emit_obj(asm_context * context)
 {
     int error_count = 0;
@@ -145,6 +169,10 @@ int asm_emit_obj(asm_context * context)
         uint16_t word;
         vector_get(&sec->code, i, &word);
         emit(context, word);
+    }
+
+    if (context->params.out_sym) {
+        write_symbol_table(context, prog);
     }
 
 done:

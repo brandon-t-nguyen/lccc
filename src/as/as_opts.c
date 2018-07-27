@@ -198,7 +198,7 @@ const option as_options[] = {
     {NULL, "--bin",         false,  opt_obj_bin,    NULL,   NULL,
         "Produce plaintext binary file\n"
         "Output file retains the file name except with a .bin extension"},
-    {NULL, "--sym (TODO)",         false,  opt_obj_sym,    NULL,   NULL,
+    {NULL, "--sym",         false,  opt_obj_sym,    NULL,   NULL,
         "Produce a symbol table file\n"
         "Output file retains the file name except with a .sym extension"},
     {NULL, NULL, true, NULL, NULL, NULL, NULL},
