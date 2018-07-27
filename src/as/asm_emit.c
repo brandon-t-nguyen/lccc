@@ -65,11 +65,11 @@ char * replace_extension(const char * str, const char * rep)
 
 // true binary
 static
-void emit_binary(FILE * f, uint16_t word)
+void emit_obj(FILE * f, uint16_t word)
 {
     // .obj is big endian
-    uint8_t lo = (word & 0xF);
-    uint8_t hi = ((word >> 8) & 0xF);
+    uint8_t lo = (word & 0xFF);
+    uint8_t hi = ((word >> 8) & 0xFF);
     fwrite(&hi, 1, 1, f);
     fwrite(&lo, 1, 1, f);
 }
@@ -98,7 +98,7 @@ void emit_bin(FILE * f, uint16_t word)
 static
 void emit(asm_context * context, uint16_t word)
 {
-    emit_binary(context->o_file, word);
+    emit_obj(context->o_file, word);
     if (context->params.out_hex) {
         emit_hex(context->h_file, word);
     }
