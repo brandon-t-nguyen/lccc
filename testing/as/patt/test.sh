@@ -31,6 +31,7 @@ do
     out_hex="tmp/$test.hex"
     out_bin="tmp/$test.bin"
     out_obj="tmp/$test.obj"
+    out_sym="tmp/$test.sym"
 
     cmd="./$exe $file -o $outdir/$test.obj --hex --bin --sym"
     echo $cmd
@@ -51,6 +52,7 @@ do
             result_hex="$(diff -q -N $out_hex $expect_dir/$test.hex)"
             result_bin="$(diff -q -N $out_bin  $expect_dir/$test.bin)"
             result_obj="$(diff -q <(xxd $out_obj) <(xxd $expect_dir/$test.obj))"
+            result_sym="$(diff -q <(tail -n +3 $out_sym | awk '{ printf "%s = %s\n", $2, $3 }') <(tail -n +3 $expect_dir/$test.sym | awk '{ printf "%s = %s\n", $2, $3 }'))"
         fi
 
         if [ $ret != 0 ]
@@ -59,7 +61,7 @@ do
             result_list+=($fail_str)
             fail_count=$((fail_count+1))
             echo -e "$test: $fail_str"
-        elif [ -z "$result_hex"  ] && [ -z "$result_bin" ] && [ -z "$result_obj" ]
+        elif [ -z "$result_hex"  ] && [ -z "$result_bin" ] && [ -z "$result_obj" ] && [ -z "$result_sym" ]
         then
             # success
             result_list+=($pass_str)
@@ -88,6 +90,12 @@ do
             then
                 echo "Differences in .obj file..."
                 diff -t -N -y  <(xxd $out_obj) <(xxd $expect_dir/$test.obj)
+            fi
+
+            if [[ ! -z "$result_sym" ]]
+            then
+                echo "Differences in .sym file..."
+                diff -t -N -y <(tail -n +3 $out_sym | awk '{ printf "%s = %s\n", $2, $3 }') <(tail -n +3 $expect_dir/$test.sym | awk '{ printf "%s = %s\n", $2, $3 }')
             fi
         fi
         echo "|==================>"
