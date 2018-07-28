@@ -18,18 +18,19 @@ void asm_string_error(const char * line,
                       size_t hlight_beg, size_t hlight_end, size_t pos)
 {
     size_t len = strlen(line);
+    bool ansi = get_ansi();
 
     if (hlight_beg == SIZE_MAX && hlight_end == SIZE_MAX) {
-        printf("%s\n", line);
+        aetfprintf(ansi, stderr, "%s\n", line);
     } else {
         for (size_t i = 0; i < hlight_beg; ++i) {
-            fputc(line[i], stdout);
+            fputc(line[i], stderr);
         }
-        printf(ANSI_F_BMAG);
+        aetfprintf(ansi, stderr, ANSI_F_BMAG);
         for (size_t i = hlight_beg; i <= hlight_end; ++i) {
-            fputc(line[i], stdout);
+            fputc(line[i], stderr);
         }
-        printf(ANSI_RESET "%s\n", line + hlight_end + 1);
+        aetfprintf(ansi, stderr, ANSI_RESET "%s\n", line + hlight_end + 1);
     }
 
     if (pos == SIZE_MAX)
@@ -37,14 +38,14 @@ void asm_string_error(const char * line,
 
 
     for (size_t i = 0; i < pos; ++i)
-        fputc(' ', stdout);
+        fputc(' ', stderr);
 
-    printf(ANSI_F_BMAG "^" ANSI_RESET);
+    aetfprintf(ansi, stderr, ANSI_F_BMAG "^" ANSI_RESET);
 
-    printf(ANSI_BOLD ANSI_F_BWHT);
+    aetfprintf(ansi, stderr, ANSI_BOLD ANSI_F_BWHT);
     for (size_t i = 0; i < hlight_end - hlight_beg; ++i)
-        fputc('~', stdout);
-    printf(ANSI_RESET "\n"); // TODO: OS agnostic line separator macro?
+        fputc('~', stderr);
+    aetfprintf(ansi, stderr, ANSI_RESET "\n"); // TODO: OS agnostic line separator macro?
 }
 
 void asm_line_error(const asm_line * line, size_t hlight_beg, size_t hlight_end, size_t pos)

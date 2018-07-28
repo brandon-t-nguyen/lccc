@@ -7,7 +7,13 @@
 
 #include "print.h"
 
-static bool ansi_enable = true;
+#if !(defined PLATFORM_WINDOWS)
+#define DEFAULT_ENABLE true
+#else
+#define DEFAULT_ENABLE false
+#endif
+
+static bool ansi_enable = DEFAULT_ENABLE;
 static msg_level base_level = M_INFO;
 
 void enable_ansi(void)
@@ -18,6 +24,16 @@ void enable_ansi(void)
 void disable_ansi(void)
 {
     ansi_enable = false;
+}
+
+bool get_ansi(void)
+{
+    return ansi_enable;
+}
+
+void set_ansi(bool set)
+{
+    ansi_enable = set;
 }
 
 void msg_set_level(msg_level level)

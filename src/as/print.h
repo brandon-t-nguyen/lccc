@@ -5,12 +5,15 @@
 extern "C" {
 #endif
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <btn/ansi.h>
 #include <btn/print.h>
 
 void enable_ansi(void);
 void disable_ansi(void);
+bool get_ansi(void);
+void set_ansi(bool set);
 
 typedef enum _msg_level
 {
