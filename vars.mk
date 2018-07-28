@@ -1,5 +1,6 @@
 # Available platforms: UNIX, WINDOWS
 export PLATFORM = UNIX
+#export PLATFORM = WINDOWS
 
 # Default settings: PATT, LCCC
 # * PATT results in default behaviors that match
@@ -9,3 +10,4 @@ export PLATFORM = UNIX
 # * LCCC results in default behaviors that take advantage
 #   of the new features of LCCC
 export DEFAULT = PATT
+#export DEFAULT = LCCC
