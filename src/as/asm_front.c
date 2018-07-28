@@ -603,6 +603,15 @@ const match_op lccc_ops[] =
 static
 bool validate_symbol(const char * str)
 {
+    int val;
+    // needs to not to trigger confusion with parsing imms or regs
+    if (parse_num(str, &val) != PARSE_INV)
+        return false;
+
+    if (sscanf(str, "r%u", &val) > 0 ||
+        sscanf(str, "R%u", &val) > 0)
+        return false;
+
     // first character must be alphabetic or underscore
     if (!('A' <= str[0] && str[0] <= 'Z') &&
         !('a' <= str[0] && str[0] <= 'z') &&
