@@ -22,6 +22,7 @@ fail_str="${red}FAIL${nc}";
 
 
 mkdir -p tmp
+rm -f tmp/*
 
 for file in $tests
 do
@@ -101,7 +102,7 @@ do
         echo "Running -test: $test"
         $cmd
         ret=$?
-        if [ $ret != 0 ]
+        if [ $ret != 0 ] && [ ! -e "$result_hex" ] && [ ! -e "$result_bin" ] && [ ! -e "$result_obj" ]
         then
             # success
             echo -e "$test: $pass_str"
@@ -112,8 +113,18 @@ do
             result_list+=("$fail_str")
             fail_count=$((fail_count+1))
             echo -e "$test: $fail_str"
-            echo "expect code: $code"
-            echo "actual code: $ret"
+
+            if [ -e "$result_hex" ]; then
+                echo -e "Should not have produced .hex file"
+            fi
+
+            if [ -e "$result_bin" ]; then
+                echo -e "Should not have produced .bin file"
+            fi
+
+            if [ -e "$result_obj" ]; then
+                echo -e "Should not have produced .obj file"
+            fi
         fi
         echo "|==================>"
         echo ""
