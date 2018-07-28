@@ -68,10 +68,8 @@ static
 void emit_obj(FILE * f, uint16_t word)
 {
     // .obj is big endian
-    uint8_t lo = (word & 0xFF);
-    uint8_t hi = ((word >> 8) & 0xFF);
-    fwrite(&hi, 1, 1, f);
-    fwrite(&lo, 1, 1, f);
+    uint16_t rev = ((word & 0xFF) << 8) | ((word >> 8) & 0xFF);
+    fwrite(&rev, 2, 1, f);
 }
 
 // plaintext hex
