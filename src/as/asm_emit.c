@@ -133,7 +133,7 @@ int asm_emit_obj(asm_context * context)
 {
     int error_count = 0;
     char * path  = NULL;
-    ASSERT_OPEN(context->o_file, context->params.output_file, "w");
+    ASSERT_OPEN(context->o_file, context->params.output_file, "wb");
 
     if (context->params.out_hex) {
         path = replace_extension(context->params.output_file, "hex");
